@@ -1,103 +1,102 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import { getRequest } from '@/lib/api';
+import CourseCard from '@/compoenets/CourseCard';
+import Link from 'next/link';
+import useAuthStore from '@/lib/store';
+
+export default function HomePage() {
+  const [courses, setCourses] = useState([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const courseList = await getRequest('/courses');
+        setCourses(courseList);
+
+        // 🔐 If student, also fetch enrollments
+        if (user?.role === 'STUDENT') {
+          const enrolled = await getRequest('/enrollments/my');
+          const ids = enrolled.map((e) => e.course.id);
+          setEnrolledCourseIds(ids);
+        }
+      } catch (err) {
+        console.error('Failed to load courses', err);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="space-y-16">
+      {/* ✅ Hero Section */}
+      <section className="text-center py-20 bg-gradient-to-br from-blue-600 to-indigo-800 text-white">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">Learn Anything. Anytime. Anywhere.</h1>
+        <p className="text-lg max-w-xl mx-auto">
+          Explore high-quality courses by expert instructors. Join Vigyana and start growing your skills today.
+        </p>
+        <div className="mt-6">
+          <Link href="/register" className="bg-white text-blue-700 font-bold px-6 py-2 rounded hover:bg-blue-100">
+            Get Started
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* ✅ Featured Courses */}
+      <section className="max-w-6xl mx-auto px-4">
+        <h2 className="text-3xl font-bold mb-6 text-center">Featured Courses</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {courses.length === 0 && <p>No courses available</p>}
+          {courses.map((course) => (
+            <CourseCard
+              key={course.id}
+              course={course}
+              isEnrolled={enrolledCourseIds.includes(course.id)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ✅ Testimonials */}
+      <section className="bg-gray-100 py-16">
+        <div className="max-w-5xl mx-auto text-center px-4">
+          <h2 className="text-3xl font-bold mb-8">What Our Students Say</h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                name: 'Aarav M.',
+                quote: 'Vigyana helped me learn full-stack development at my own pace!',
+              },
+              {
+                name: 'Priya S.',
+                quote: 'Super clean interface, top-quality instructors. Love it!',
+              },
+              {
+                name: 'Rohan K.',
+                quote: 'I got my first job after completing 2 courses on Vigyana.',
+              },
+            ].map((t) => (
+              <div key={t.name} className="bg-white p-6 rounded shadow">
+                <p className="italic text-gray-700 mb-2">"{t.quote}"</p>
+                <p className="font-bold text-blue-700">{t.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ✅ Final CTA */}
+      <section className="text-center py-16 bg-indigo-800 text-white">
+        <h2 className="text-3xl font-bold mb-4">Ready to start learning?</h2>
+        <p className="mb-6">Join thousands of learners across the globe.</p>
+        <Link href="/register" className="bg-white text-indigo-700 px-6 py-2 rounded font-semibold">
+          Sign Up Free
+        </Link>
+      </section>
     </div>
   );
 }
