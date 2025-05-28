@@ -1,61 +1,64 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getRequest, postRequest } from '@/lib/api';
 import toast from 'react-hot-toast';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
+import Link from 'next/link';
 
-export default function CreateCoursePage() {
-  const router = useRouter();
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    price: '',
-    thumbnail: null,
-  });
+export default function InstructorDashboard() {
+  const [courses, setCourses] = useState([]);
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (files) {
-      setForm((prev) => ({ ...prev, [name]: files[0] }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
-    }
+  const fetchCourses = () => {
+    getRequest('/courses/mine')
+      .then(setCourses)
+      .catch(() => toast.error('Failed to load courses'));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    fetchCourses();
+  }, []);
 
-    const data = new FormData();
-    data.append('title', form.title);
-    data.append('description', form.description);
-    data.append('price', form.price);
-    data.append('thumbnail', form.thumbnail);
-
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure?')) return;
     try {
-      await fetch('http://localhost:5000/api/courses', {
-        method: 'POST',
+      await fetch(`http://localhost:5000/api/courses/${id}`, {
+        method: 'DELETE',
         credentials: 'include',
-        body: data,
       });
-      toast.success('Course created');
-     router.push(`/instructor/${newCourse.id}/add-section`)
+      toast.success('Deleted');
+      fetchCourses();
     } catch (err) {
-      toast.error('Failed to create course');
+      toast.error('Failed to delete');
     }
   };
 
   return (
     <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-      <div className="max-w-xl mx-auto mt-10">
-        <h1 className="text-2xl font-bold mb-4">Create New Course</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="title" className="input" placeholder="Title" onChange={handleChange} required />
-          <textarea name="description" className="input" placeholder="Description" onChange={handleChange} required />
-          <input name="price" type="number" className="input" placeholder="Price" onChange={handleChange} required />
-          <input name="thumbnail" type="file" accept="image/*" className="input" onChange={handleChange} required />
-          <button className="bg-green-600 text-white px-4 py-2 rounded">Create Course</button>
-        </form>
+      <div>
+        <h1 className="text-2xl font-bold mb-4">My Courses</h1>
+        <Link href="/instructor/create" className="bg-blue-600 text-white px-4 py-2 rounded mb-6 inline-block">
+          + New Course
+        </Link>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {courses.map((course) => (
+            <div key={course.id} className="border p-4 rounded shadow">
+              <img src={course.thumbnailUrl} className="h-32 w-full object-cover rounded" />
+              <h2 className="font-bold mt-2">{course.title}</h2>
+              <p>Status: <b>{course.status}</b></p>
+              <Link href={`/instructor/${course.id}/add-section`} className="text-blue-600 mt-2 block">
+                + Add Section
+              </Link>
+              <button
+                onClick={() => handleDelete(course.id)}
+                className="bg-red-600 text-white px-3 py-1 rounded mt-2"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </ProtectedRoute>
   );
