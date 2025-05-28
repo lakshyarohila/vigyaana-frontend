@@ -40,15 +40,15 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[#1c4645] text-white shadow-lg relative">
+    <nav className="bg-[#0f302f] text-white shadow-lg relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center   space-x-3 hover:opacity-80 transition-opacity">
             <img 
               src="/logo.png" 
               alt="Vigyana Logo" 
-              className="h-60 mt-10 w-auto object-contain"
+              className="h-60 mt-10  w-auto object-contain"
               onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';
@@ -71,13 +71,7 @@ export default function Navbar() {
                   <LogIn className="h-4 w-4" />
                   <span>Login</span>
                 </Link>
-                <Link 
-                  href="/register"
-                  className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  <span>Register</span>
-                </Link>
+               
               </>
             )}
 

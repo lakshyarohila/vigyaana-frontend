@@ -14,7 +14,7 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
     checkAuth(); // 🧠 Load user from cookie on every refresh
   }, []);
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <Toaster position="top-right" />
         <Navbar />
