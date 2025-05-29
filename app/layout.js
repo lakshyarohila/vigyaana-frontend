@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "@/compoenets/Navbar";
 import Script from "next/script"; // ✅ Added missing import
 import useAuthStore from '@/lib/store';
+import  Footer  from "@/compoenets/Footer";
 
 
 export default function RootLayout({ children }) {
@@ -21,6 +22,7 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
         {children}
         {/* ✅ Razorpay Script - Loads globally once */}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+        <Footer/>
       </body>
     </html>
   );
