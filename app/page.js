@@ -60,7 +60,7 @@ export default function HomePage() {
               <span className="text-[#e17100]">Anytime. Anywhere.</span>
             </h1>
             <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8 text-gray-200 leading-relaxed">
-              Explore high-quality courses by expert instructors. Join Vigyana and start growing your skills today.
+              Explore high-quality courses by expert instructors. Join Vigyaana and start growing your skills today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link 

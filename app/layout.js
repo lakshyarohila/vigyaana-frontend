@@ -16,6 +16,11 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
   }, []);
   return (
     <html lang="en" suppressHydrationWarning>
+    <head>
+        <title>Vigyaana</title>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+
       <body>
         <Toaster position="top-right" />
         <Navbar />

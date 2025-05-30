@@ -45,19 +45,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center   space-x-3 hover:opacity-80 transition-opacity">
-            <img 
-              src="/logo.png" 
-              alt="Vigyana Logo" 
-              className="h-60 mt-10  w-auto object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="hidden items-center space-x-2">
-              <GraduationCap className="h-8 w-8 text-[#e17100]" />
-              <span className="font-bold text-xl tracking-tight">Vigyana</span>
-            </div>
+           <h1 className='text-2xl font-semibold'>Vigyaana</h1>
           </Link>
 
           {/* Desktop Navigation */}
