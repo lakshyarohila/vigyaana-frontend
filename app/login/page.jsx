@@ -28,7 +28,20 @@ export default function LoginPage() {
     try {
       const res = await postRequest("/auth/login", form);
       setUser(res.user);
-      toast.success("Logged in");
+      toast.success("Logged in!", {
+        duration: 3000,
+        position: "top-right",
+        style: {
+          backgroundColor: "#332a38",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+          padding: "12px 16px",
+          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
+        },
+        icon: "🚀",
+      });
+
       router.push("/");
     } catch (err) {
       toast.error(err.message);

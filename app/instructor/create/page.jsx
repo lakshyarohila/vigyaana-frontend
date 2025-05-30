@@ -80,7 +80,7 @@ export default function CreateCoursePage() {
                 </label>
                 <input 
                   name="title" 
-                  className="w-full px-4 py-3 border-2 rounded-md focus:outline-none focus:ring-2 transition-colors"
+                  className="w-full px-4 py-3 border-2 text-black rounded-md focus:outline-none focus:ring-2 transition-colors"
                   style={{ 
                     borderColor: '#1c4645',
                     focusRingColor: '#1c4645'
@@ -97,7 +97,7 @@ export default function CreateCoursePage() {
                 </label>
                 <textarea 
                   name="description" 
-                  className="w-full px-4 py-3 border-2 rounded-md focus:outline-none focus:ring-2 transition-colors h-32 resize-none"
+                  className="w-full px-4 py-3 text-black border-2 rounded-md focus:outline-none focus:ring-2 transition-colors h-32 resize-none"
                   style={{ 
                     borderColor: '#1c4645',
                     focusRingColor: '#1c4645'
@@ -117,7 +117,7 @@ export default function CreateCoursePage() {
                   type="number" 
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-3 border-2 rounded-md focus:outline-none focus:ring-2 transition-colors"
+                  className="w-full px-4 py-3 text-black border-2 rounded-md focus:outline-none focus:ring-2 transition-colors"
                   style={{ 
                     borderColor: '#1c4645',
                     focusRingColor: '#1c4645'
@@ -136,7 +136,7 @@ export default function CreateCoursePage() {
                   name="thumbnail" 
                   type="file" 
                   accept="image/*" 
-                  className="w-full px-4 py-3 border-2 rounded-md focus:outline-none focus:ring-2 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:cursor-pointer"
+                  className="w-full px-4 py-3 border-2 text-black rounded-md focus:outline-none focus:ring-2 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:cursor-pointer"
                   style={{ 
                     borderColor: '#1c4645',
                     focusRingColor: '#1c4645'
