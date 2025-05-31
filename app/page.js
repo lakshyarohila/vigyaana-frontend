@@ -208,7 +208,7 @@ export default function HomePage() {
                     <Star key={i} className="h-5 w-5 text-[#e17100] fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-700 mb-6 leading-relaxed italic">"{testimonial.quote}"</p>
+                <p className="text-gray-700 mb-6 leading-relaxed italic">{testimonial.quote}</p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-[#1c4645] rounded-full flex items-center justify-center text-white font-bold mr-4">
                     {testimonial.name.charAt(0)}
