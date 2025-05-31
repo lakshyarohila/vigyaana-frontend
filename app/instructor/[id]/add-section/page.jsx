@@ -1,14 +1,14 @@
 'use client';
 
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Upload, Video, FileText, ArrowLeft, Plus } from 'lucide-react';
-
-// Mock ProtectedRoute component for demonstration
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  return <div>{children}</div>;
-};
+import toast from 'react-hot-toast';
+import ProtectedRoute from '@/compoenets/ProtectedRoute';
+import { Upload, Video, FileText } from 'lucide-react';
 
 export default function AddSectionPage() {
+  const { id: courseId } = useParams();
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [video, setVideo] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -17,16 +17,28 @@ export default function AddSectionPage() {
     e.preventDefault();
     const data = new FormData();
     data.append('title', title);
-    data.append('courseId', 'demo-course-id');
+    data.append('courseId', courseId);
     data.append('video', video);
 
     try {
-      // Simulated API call
-      console.log('Uploading section:', { title, video: video?.name });
-      alert('Section added successfully!');
-      // router.push('/instructor');
+      await fetch('http://localhost:5000/api/sections', {
+        method: 'POST',
+        credentials: 'include',
+        body: data,
+      });
+      toast.success('Section added');
+      router.push('/instructor');
     } catch (err) {
-      alert('Failed to upload section');
+      toast.error('Failed to upload section');
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files[0] && files[0].type.startsWith('video/')) {
+      setVideo(files[0]);
     }
   };
 
@@ -40,149 +52,123 @@ export default function AddSectionPage() {
     setIsDragOver(false);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type.startsWith('video/')) {
-      setVideo(files[0]);
-    }
-  };
-
   return (
     <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
-      <div className="min-h-screen bg-white">
-        {/* Header */}
-        <div className="border-b border-gray-100 bg-white">
-          <div className="max-w-4xl mx-auto px-6 py-4">
-            <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
-                <ArrowLeft size={20} />
-                <span>Back to Course</span>
-              </button>
+      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1c4645] rounded-full mb-4">
+              <Video className="w-8 h-8 text-white" />
             </div>
+            <h1 className="text-3xl font-bold text-[#1c4645] mb-2">Add New Section</h1>
+            <p className="text-gray-600">Upload a new video section to your course</p>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="max-w-2xl mx-auto px-6 py-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Header Section */}
-            <div className="bg-gradient-to-r from-gray-50 to-white px-8 py-6 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1c4645' }}>
-                  <Plus className="text-white" size={24} />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Add New Section</h1>
-                  <p className="text-gray-600 mt-1">Upload video content and add section details</p>
-                </div>
-              </div>
+          {/* Form Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="px-8 py-6 bg-[#1c4645]">
+              <h2 className="text-xl font-semibold text-white flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Section Details
+              </h2>
             </div>
+            
+            <div className="p-8 space-y-6">
+              {/* Title Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#1c4645]">
+                  Section Title
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter section title..."
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-[#1c4645] focus:outline-none transition-colors duration-200 text-gray-700 placeholder-gray-400"
+                />
+              </div>
 
-            {/* Form Section */}
-            <div className="p-8">
-              <div className="space-y-6">
-                {/* Title Input */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <FileText size={16} />
-                    Section Title
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter section title..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-opacity-20 focus:border-transparent outline-none transition-all duration-200 text-gray-900 placeholder-gray-500"
-                    style={{ focusRingColor: '#1c4645' }}
-                  />
-                </div>
-
-                {/* Video Upload */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Video size={16} />
-                    Video File
-                  </label>
-                  
-                  <div
-                    className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
-                      isDragOver
-                        ? 'border-green-400 bg-green-50'
-                        : video
-                        ? 'border-green-300 bg-green-50'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
+              {/* Video Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[#1c4645]">
+                  Video File
+                </label>
+                <div
+                  className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
+                    isDragOver
+                      ? 'border-[#1c4645] bg-[#1c4645]/5'
+                      : video
+                      ? 'border-[#1c4645] bg-[#1c4645]/5'
+                      : 'border-gray-300 hover:border-[#1c4645]'
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-[#1c4645]/10 rounded-full mb-4">
+                      <Upload className="w-6 h-6 text-[#1c4645]" />
+                    </div>
+                    
+                    {video ? (
+                      <div>
+                        <p className="text-[#1c4645] font-medium mb-1">
+                          {video.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {(video.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[#1c4645] font-medium mb-1">
+                          Drop your video here or click to browse
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Supports MP4, AVI, MOV and other video formats
+                        </p>
+                      </div>
+                    )}
+                    
                     <input
                       type="file"
                       accept="video/*"
                       onChange={(e) => setVideo(e.target.files[0])}
+                      required
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
-                    
-                    <div className="text-center">
-                      {video ? (
-                        <div className="space-y-2">
-                          <div className="w-16 h-16 mx-auto rounded-lg flex items-center justify-center bg-green-100">
-                            <Video className="text-green-600" size={32} />
-                          </div>
-                          <p className="text-sm font-medium text-green-700">{video.name}</p>
-                          <p className="text-xs text-green-600">
-                            {(video.size / (1024 * 1024)).toFixed(1)} MB
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="w-16 h-16 mx-auto rounded-lg flex items-center justify-center bg-gray-100">
-                            <Upload className="text-gray-400" size={32} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">
-                              Drop your video here, or click to browse
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Supports MP4, MOV, AVI and other video formats
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Submit Button */}
-                <div className="pt-4">
-                  <button
-                    onClick={handleSubmit}
-                    className="w-full text-white py-3 px-6 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
-                    style={{ 
-                      backgroundColor: '#1c4645',
-                      ':hover': { backgroundColor: '#0f2928' }
-                    }}
-                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0f2928'}
-                    onMouseLeave={(e) => e.target.style.backgroundColor = '#1c4645'}
-                  >
-                    <Upload size={20} />
-                    Upload Section
-                  </button>
-                </div>
+              {/* Submit Buttons */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => router.push('/instructor')}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="px-8 py-3 bg-[#1c4645] text-white rounded-lg hover:bg-[#2a5a58] transition-all duration-200 font-medium transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Upload Section
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Help Text */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Tips for uploading:</h3>
-            <ul className="space-y-1 text-xs text-gray-600">
-              <li>• Keep video files under 500MB for faster uploads</li>
-              <li>• Use descriptive titles to help students navigate</li>
-              <li>• Ensure good audio quality for better learning experience</li>
-            </ul>
+          {/* Progress Indicator */}
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center space-x-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-[#1c4645] rounded-full"></div>
+              <span>Step 2 of 3: Add Course Content</span>
+            </div>
           </div>
         </div>
       </div>

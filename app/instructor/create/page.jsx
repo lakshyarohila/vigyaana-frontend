@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-// Mock ProtectedRoute component for demo
 const ProtectedRoute = ({ children, allowedRoles }) => {
   return <div>{children}</div>;
 };
@@ -14,9 +14,6 @@ const toast = {
 };
 
 // Mock router for demo
-const useRouter = () => ({
-  push: (path) => console.log('Navigate to:', path)
-});
 
 export default function CreateCoursePage() {
   const router = useRouter();

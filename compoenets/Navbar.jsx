@@ -13,7 +13,9 @@ import {
   LogOut,
   User,
   Menu,
-  X
+  X,
+  Users
+  
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -59,6 +61,7 @@ export default function Navbar() {
                   <LogIn className="h-4 w-4" />
                   <span>Login</span>
                 </Link>
+                <Link href={'/about-us'} className='flex items-center space-x-2 ml-8'><Users /><span className='font-semibold'>About us</span></Link>
                
               </>
             )}

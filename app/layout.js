@@ -18,7 +18,7 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
     <html lang="en" suppressHydrationWarning>
     <head>
         <title>Vigyaana</title>
-        <link rel="icon" sizes="96x96"href="https://cdn-user-icons.flaticon.com/190738/190738937/1748631482418.svg?token=exp=1748632405~hmac=4aaddf439e9f72e39b19d54ba092a8ee" />
+        <link rel="icon" sizes="96x96"href="https://cdn-icons-png.flaticon.com/128/8131/8131880.png" />
       </head>
 
       <body>
