@@ -43,7 +43,7 @@ export default function CreateCoursePage() {
     data.append('thumbnail', form.thumbnail);
 
     try {
-      const response = await fetch('http://localhost:5000/api/courses', {
+      const response = await fetch('https://vigyaana-server.onrender.com/api/courses', {
         method: 'POST',
         credentials: 'include',
         body: data,
