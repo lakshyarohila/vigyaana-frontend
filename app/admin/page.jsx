@@ -20,7 +20,7 @@ export default function AdminPage() {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await fetch(`http://localhost:5000/api/courses/${id}/status`, {
+      await fetch(`https://vigyaana-server.onrender.com/api/courses/${id}/status`, {
         method: 'PATCH',
         credentials: 'include',
         headers: {
@@ -38,7 +38,7 @@ export default function AdminPage() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure?')) return;
     try {
-      await fetch(`http://localhost:5000/api/courses/${id}`, {
+      await fetch(`https://vigyaana-server.onrender.com/api/courses/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
