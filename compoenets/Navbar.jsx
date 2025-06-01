@@ -1,23 +1,22 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import useAuthStore from '@/lib/store';
-import { useRouter } from 'next/navigation';
-import { 
-  GraduationCap, 
-  LogIn, 
-  UserPlus, 
-  BookOpen, 
-  Presentation, 
-  Settings, 
+import Link from "next/link";
+import useAuthStore from "@/lib/store";
+import { useRouter } from "next/navigation";
+import {
+  GraduationCap,
+  LogIn,
+  UserPlus,
+  BookOpen,
+  Presentation,
+  Settings,
   LogOut,
   User,
   Menu,
   X,
-  Users
-  
-} from 'lucide-react';
-import { useState } from 'react';
+  Users,
+} from "lucide-react";
+import { useState } from "react";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
@@ -26,14 +25,14 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:5000/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
+      await fetch("http://localhost:5000/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
       });
       logout();
-      router.push('/login');
+      router.push("/login");
     } catch (err) {
-      console.error('Logout failed');
+      console.error("Logout failed");
     }
   };
 
@@ -46,35 +45,49 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center   space-x-3 hover:opacity-80 transition-opacity">
-           <h1 className='text-2xl font-semibold'>Vigyaana</h1>
+          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+            <h1 className="text-2xl font-semibold">Vigyaana</h1>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-4">
+            {/* "About Us" is always visible (public) */}
+            <Link 
+              href="/about-us" 
+              className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+            >
+              <Users className="h-4 w-4" />
+              <span className="font-semibold">About Us</span>
+            </Link>
+
             {!user && (
               <>
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="flex items-center space-x-2 bg-[#e17100] hover:bg-[#c5610a] px-4 py-2 rounded-full transition-colors duration-200 font-medium"
                 >
                   <LogIn className="h-4 w-4" />
                   <span>Login</span>
                 </Link>
-                <Link href={'/about-us'} className='flex items-center space-x-2 ml-8'><Users /><span className='font-semibold'>About us</span></Link>
-               
+                <Link
+                  href="/register"
+                  className="flex items-center space-x-2 border border-[#e17100] text-[#e17100] hover:bg-[#e17100] hover:text-white px-4 py-2 rounded-full transition-colors duration-200 font-medium"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Register</span>
+                </Link>
               </>
             )}
 
             {user && (
               <>
-                <div className="flex items-center space-x-2 px-3 py-1 bg-[#2a5a58] rounded-full mr-4">
+                <div className="flex items-center space-x-2 px-3 py-1 bg-[#2a5a58] rounded-full">
                   <User className="h-4 w-4 text-[#e17100]" />
                   <span className="text-sm font-medium">{user.name || user.email}</span>
                 </div>
 
-                {user.role === 'STUDENT' && (
-                  <Link 
+                {user.role === "STUDENT" && (
+                  <Link
                     href="/dashboard"
                     className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
                   >
@@ -83,8 +96,8 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                {user.role === 'INSTRUCTOR' && (
-                  <Link 
+                {user.role === "INSTRUCTOR" && (
+                  <Link
                     href="/instructor"
                     className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
                   >
@@ -93,8 +106,8 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                {user.role === 'ADMIN' && (
-                  <Link 
+                {user.role === "ADMIN" && (
+                  <Link
                     href="/admin"
                     className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
                   >
@@ -103,9 +116,9 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                <button 
-                  onClick={handleLogout} 
-                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-full transition-colors duration-200 font-medium ml-2"
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-full transition-colors duration-200 font-medium"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
@@ -116,15 +129,8 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-md hover:bg-[#2a5a58] transition-colors duration-200"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+            <button onClick={toggleMobileMenu} className="p-2 rounded-md hover:bg-[#2a5a58] transition-colors duration-200">
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
@@ -133,19 +139,29 @@ export default function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-[#1c4645] border-t border-[#2a5a58] shadow-lg z-50">
             <div className="px-4 py-4 space-y-3">
+              {/* "About Us" is always visible (public) */}
+              <Link
+                href="/about-us"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Users className="h-5 w-5" />
+                <span>About Us</span>
+              </Link>
+
               {!user && (
                 <>
-                  <Link 
-                    href="/login" 
+                  <Link
+                    href="/login"
                     className="flex items-center space-x-3 bg-[#e17100] hover:bg-[#c5610a] px-4 py-3 rounded-lg transition-colors duration-200 font-medium"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <LogIn className="h-5 w-5" />
                     <span>Login</span>
                   </Link>
-                  <Link 
+                  <Link
                     href="/register"
-                    className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                    className="flex items-center space-x-3 border border-[#e17100] text-[#e17100] hover:bg-[#e17100] hover:text-white px-4 py-3 rounded-lg transition-colors duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <UserPlus className="h-5 w-5" />
@@ -161,8 +177,8 @@ export default function Navbar() {
                     <span className="font-medium">{user.name || user.email}</span>
                   </div>
 
-                  {user.role === 'STUDENT' && (
-                    <Link 
+                  {user.role === "STUDENT" && (
+                    <Link
                       href="/dashboard"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -172,8 +188,8 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {user.role === 'INSTRUCTOR' && (
-                    <Link 
+                  {user.role === "INSTRUCTOR" && (
+                    <Link
                       href="/instructor"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -183,8 +199,8 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  {user.role === 'ADMIN' && (
-                    <Link 
+                  {user.role === "ADMIN" && (
+                    <Link
                       href="/admin"
                       className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -194,7 +210,7 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  <button 
+                  <button
                     onClick={() => {
                       handleLogout();
                       setIsMobileMenuOpen(false);
