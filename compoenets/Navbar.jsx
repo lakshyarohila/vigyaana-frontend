@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import useAuthStore from "@/lib/store";
@@ -25,7 +25,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5000/api/auth/logout", {
+      await fetch("https://vigyaana-server.onrender.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -54,13 +54,22 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* About Us is always visible */}
+            {/* About Us */}
             <Link
               href="/about-us"
               className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
             >
               <Users className="h-4 w-4" />
               <span className="font-semibold">About Us</span>
+            </Link>
+
+            {/* Blogs (always visible) */}
+            <Link
+              href="/blogs"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="font-semibold">Blogs</span>
             </Link>
 
             {!user && (
@@ -112,13 +121,22 @@ export default function Navbar() {
                 )}
 
                 {user.role === "ADMIN" && (
-                  <Link
-                    href="/admin"
-                    className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Admin Panel</span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </Link>
+                    <Link
+                      href="/admin/blogs/create"
+                      className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span>Write Blog</span>
+                    </Link>
+                  </>
                 )}
 
                 <button
@@ -151,7 +169,7 @@ export default function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-[#1c4645] border-t border-[#2a5a58] shadow-lg z-50">
             <div className="px-4 py-4 space-y-3">
-              {/* About Us is always visible */}
+              {/* About Us */}
               <Link
                 href="/about-us"
                 className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
@@ -159,6 +177,16 @@ export default function Navbar() {
               >
                 <Users className="h-5 w-5" />
                 <span>About Us</span>
+              </Link>
+
+              {/* Blogs */}
+              <Link
+                href="/blogs"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <BookOpen className="h-5 w-5" />
+                <span>Blogs</span>
               </Link>
 
               {!user && (
@@ -214,14 +242,24 @@ export default function Navbar() {
                   )}
 
                   {user.role === "ADMIN" && (
-                    <Link
-                      href="/admin"
-                      className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Settings className="h-5 w-5" />
-                      <span>Admin Panel</span>
-                    </Link>
+                    <>
+                      <Link
+                        href="/admin"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>Admin Panel</span>
+                      </Link>
+                      <Link
+                        href="/admin/blogs/create"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <BookOpen className="h-5 w-5" />
+                        <span>Write Blog</span>
+                      </Link>
+                    </>
                   )}
 
                   <button
