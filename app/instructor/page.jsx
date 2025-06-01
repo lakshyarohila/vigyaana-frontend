@@ -31,7 +31,7 @@ export default function InstructorDashboard() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
     try {
-      await fetch(`http://localhost:5000/api/courses/${id}`, {
+      await fetch(`https://vigyaana-server.onrender.com/api/courses/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
