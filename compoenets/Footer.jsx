@@ -1,3 +1,5 @@
+'use client'
+import Link from "next/link";
 const Footer = () => {
   return (
     <footer className="bg-gray-800 text-white p-6">
@@ -7,7 +9,7 @@ const Footer = () => {
 
         <div className="mt-4">
           <p>Email: <spam className="underline">team.vigyaana@gmail.com</spam></p>
-          <p>Phone: +91-7827529146</p>
+          
         </div>
 
         <div className="mt-4 flex justify-center gap-6">
@@ -22,7 +24,7 @@ const Footer = () => {
           <a href="#" className="underline">FAQs</a>
           <a href="#" className="underline">Privacy Policy</a>
           <a href="#" className="underline">Terms & Conditions</a>
-          <a href="#" className="underline">Support</a>
+          <Link href="/about-us" className="underline">Support</Link>
         </div>
 
         <div className="mt-4 flex justify-center gap-6">
