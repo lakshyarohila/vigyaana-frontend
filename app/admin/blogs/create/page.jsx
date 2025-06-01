@@ -1,10 +1,14 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import MarkdownEditor from '@/compoenets/MarkdownEditor';
+import dynamic from 'next/dynamic';
 
+// ✅ Dynamically import the editor with SSR disabled
+const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor'), {
+  ssr: false,
+});
 export default function CreateBlogPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
