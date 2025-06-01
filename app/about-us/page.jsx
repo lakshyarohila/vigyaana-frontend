@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Zap, Users, Target, Brain, Rocket, Award, Globe } from 'lucide-react';
+import ContactForm from '@/compoenets/ContactForm';
 
 const AboutUs = () => {
   return (
@@ -170,7 +171,7 @@ const AboutUs = () => {
       </section>
 
       {/* Footer */}
-    
+    <ContactForm/>
     </div>
   );
 };
