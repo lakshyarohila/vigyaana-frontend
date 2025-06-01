@@ -44,15 +44,15 @@ export default function HomePage() {
   }, [user]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen ">
       {/* ✅ Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1c4645] via-[#2a5a58] to-[#1c4645] text-white">
+      <section className="relative  overflow-hidden bg-gradient-to-br from-[#1c4645] via-[#2a5a58] to-[#1c4645] text-white">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-20 sm:py-24 lg:py-32">
           <div className="text-center">
             <div className="flex justify-center mb-6">
               <div className="p-4 bg-[#e17100] rounded-full">
-                <BookOpen className="h-12 w-12 text-white" />
+                <BookOpen className="h-12 w-14 text-white" />
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
