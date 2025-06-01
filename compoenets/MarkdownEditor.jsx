@@ -1,8 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import SimpleMDE from 'react-simplemde-editor';
-import 'easymde/dist/easymde.min.css';
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import "easymde/dist/easymde.min.css";
+
+// Dynamically import SimpleMDE to disable SSR (prevent "document is not defined" error)
+const SimpleMDE = dynamic(() => import("react-simplemde-editor"), { ssr: false });
 
 export default function MarkdownEditor({ value, onChange }) {
   const [mounted, setMounted] = useState(false);
