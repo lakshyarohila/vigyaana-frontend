@@ -1,45 +1,46 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import 'react-quill/dist/quill.snow.css';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
-import { postRequest } from '@/lib/api';
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import ClientEditor from "@/components/ClientEditor";
 
 export default function CreateBlogPage() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !content || !image) return toast.error('All fields required');
+
+    if (!title || !content || !image) {
+      return toast.error("Please fill all fields");
+    }
 
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
-    formData.append('image', image);
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("image", image);
 
     try {
-      await fetch('https://your-backend-url.onrender.com/api/blogs', {
-        method: 'POST',
-        credentials: 'include',
+      await fetch("https://vigyaana-server.onrender.com/api/blogs", {
+        method: "POST",
+        credentials: "include", // ✅ Required to send auth cookies
         body: formData,
       });
-      toast.success('Blog created!');
-      router.push('/blogs');
+
+      toast.success("Blog created!");
+      router.push("/blogs");
     } catch (err) {
-      toast.error('Failed to create blog');
+      toast.error("Failed to publish blog");
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold mb-6">📝 Write a Blog</h1>
+      <h1 className="text-3xl font-bold mb-6">📝 Create Blog</h1>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <input
           type="text"
@@ -56,12 +57,7 @@ export default function CreateBlogPage() {
           className="w-full"
         />
 
-        <ReactQuill
-          theme="snow"
-          value={content}
-          onChange={setContent}
-          className="bg-white"
-        />
+        <ClientEditor value={content} onChange={setContent} />
 
         <button
           type="submit"
