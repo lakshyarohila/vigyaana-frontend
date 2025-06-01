@@ -3,7 +3,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import ClientEditor from "@/components/ClientEditor";
+import ClientEditor from "@/compoenets/ClientEditor";
 
 export default function CreateBlogPage() {
   const router = useRouter();
