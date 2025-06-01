@@ -21,7 +21,7 @@ export default function AddSectionPage() {
     data.append('video', video);
 
     try {
-      await fetch('http://localhost:5000/api/sections', {
+      await fetch('https://vigyaana-server.onrender.com/api/sections', {
         method: 'POST',
         credentials: 'include',
         body: data,
