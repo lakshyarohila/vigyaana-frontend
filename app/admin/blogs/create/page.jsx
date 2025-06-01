@@ -3,12 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 
-// ✅ Dynamically import the editor with SSR disabled
-const MarkdownEditor = dynamic(() => import('@/components/MarkdownEditor'), {
-  ssr: false,
-});
 export default function CreateBlogPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -24,7 +19,7 @@ export default function CreateBlogPage() {
 
     const formData = new FormData();
     formData.append('title', title);
-    formData.append('content', content); // now it's markdown
+    formData.append('content', content);
     formData.append('image', image);
 
     try {
@@ -60,7 +55,12 @@ export default function CreateBlogPage() {
           className="w-full"
         />
 
-        <MarkdownEditor value={content} onChange={setContent} />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full border rounded p-2 h-52"
+          placeholder="Write your blog content..."
+        />
 
         <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
           Publish Blog
