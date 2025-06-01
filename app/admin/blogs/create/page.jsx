@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function CreateBlogPage() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const router = useRouter();
 
@@ -14,33 +14,38 @@ export default function CreateBlogPage() {
     e.preventDefault();
 
     if (!title || !content || !image) {
-      return toast.error('Please fill all fields');
+      return toast.error("Please fill all fields");
     }
 
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
-    formData.append('image', image);
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("image", image);
 
     try {
-      const res = await fetch('https://vigyaana-server.onrender.com/api/blogs', {
-        method: 'POST',
-        credentials: 'include',
+      const res = await fetch("https://vigyaana-server.onrender.com/api/blogs", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Accept: "application/json", // Ensures server returns JSON
+        },
         body: formData,
       });
 
-      const data = await res.json();
-      console.log('📦 Blog create response:', data);
-
       if (!res.ok) {
-        throw new Error(data.message || 'Blog creation failed');
+        const errorText = await res.text(); // Read response as text to debug HTML errors
+        console.error("❌ Server Error:", errorText); // Log full response
+        throw new Error("Blog creation failed. Server Response: " + errorText);
       }
 
-      toast.success('Blog published!');
-      router.push('/blogs');
+      const data = await res.json(); // Now safely parsing JSON
+      console.log("📦 Blog create response:", data);
+
+      toast.success("Blog published!");
+      router.push("/blogs");
     } catch (err) {
-      console.error('❌ Blog creation error:', err.message);
-      toast.error(err.message || 'Failed to create blog');
+      console.error("❌ Blog creation error:", err.message);
+      toast.error(err.message || "Failed to create blog");
     }
   };
 
@@ -70,10 +75,7 @@ export default function CreateBlogPage() {
           placeholder="Write your blog content..."
         />
 
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          type="submit"
-        >
+        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
           Publish Blog
         </button>
       </form>
