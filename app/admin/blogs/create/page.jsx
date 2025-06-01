@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import MarkdownEditor from '@/components/MarkdownEditor';
+import MarkdownEditor from '@/compoenets/MarkdownEditor';
 
 export default function CreateBlogPage() {
   const [title, setTitle] = useState('');
