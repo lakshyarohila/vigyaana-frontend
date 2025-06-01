@@ -23,16 +23,24 @@ export default function CreateBlogPage() {
     formData.append('image', image);
 
     try {
-      await fetch('https://vigyaana-server.onrender.com/api/blogs', {
+      const res = await fetch('https://vigyaana-server.onrender.com/api/blogs', {
         method: 'POST',
         credentials: 'include',
         body: formData,
       });
 
+      const data = await res.json();
+      console.log('📦 Blog create response:', data);
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Blog creation failed');
+      }
+
       toast.success('Blog published!');
       router.push('/blogs');
     } catch (err) {
-      toast.error('Failed to create blog');
+      console.error('❌ Blog creation error:', err.message);
+      toast.error(err.message || 'Failed to create blog');
     }
   };
 
@@ -62,7 +70,10 @@ export default function CreateBlogPage() {
           placeholder="Write your blog content..."
         />
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          type="submit"
+        >
           Publish Blog
         </button>
       </form>
