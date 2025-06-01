@@ -29,7 +29,7 @@ export default function CourseWatchPage() {
     );
     try {
       await fetch(
-        `http://localhost:5000/api/enrollments/progress/${courseId}`,
+        `https://vigyaana-server.onrender.com/api/enrollments/progress/${courseId}`,
         {
           method: "PATCH",
           credentials: "include",
