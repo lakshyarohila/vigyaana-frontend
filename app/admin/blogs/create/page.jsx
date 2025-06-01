@@ -1,46 +1,45 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import ClientEditor from "@/compoenets/ClientEditor";
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
 export default function CreateBlogPage() {
-  const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [image, setImage] = useState(null);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!title || !content || !image) {
-      return toast.error("Please fill all fields");
+      return toast.error('Please fill all fields');
     }
 
     const formData = new FormData();
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("image", image);
+    formData.append('title', title);
+    formData.append('content', content); // now it's markdown
+    formData.append('image', image);
 
     try {
-      await fetch("https://vigyaana-server.onrender.com/api/blogs", {
-        method: "POST",
-        credentials: "include", // ✅ Required to send auth cookies
+      await fetch('https://vigyaana-server.onrender.com/api/blogs', {
+        method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 
-      toast.success("Blog created!");
-      router.push("/blogs");
+      toast.success('Blog published!');
+      router.push('/blogs');
     } catch (err) {
-      toast.error("Failed to publish blog");
+      toast.error('Failed to create blog');
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <h1 className="text-3xl font-bold mb-6">📝 Create Blog</h1>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         <input
           type="text"
@@ -57,12 +56,9 @@ export default function CreateBlogPage() {
           className="w-full"
         />
 
-        <ClientEditor value={content} onChange={setContent} />
+        <MarkdownEditor value={content} onChange={setContent} />
 
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+        <button className="bg-blue-600 text-white px-4 py-2 rounded" type="submit">
           Publish Blog
         </button>
       </form>
