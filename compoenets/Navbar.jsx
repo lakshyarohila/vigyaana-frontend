@@ -251,14 +251,7 @@ export default function Navbar() {
                         <Settings className="h-5 w-5" />
                         <span>Admin Panel</span>
                       </Link>
-                      <Link
-                        href="/admin/blogs/create"
-                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <BookOpen className="h-5 w-5" />
-                        <span>Write Blog</span>
-                      </Link>
+                     
                     </>
                   )}
 
