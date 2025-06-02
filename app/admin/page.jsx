@@ -9,7 +9,7 @@ export default function AdminPage() {
   const [courses, setCourses] = useState([]);
 
   const fetchCourses = () => {
-  getRequest('/admin/courses')
+    getRequest('/admin/courses')
       .then(setCourses)
       .catch(() => toast.error('Failed to load courses'));
   };
@@ -23,9 +23,7 @@ export default function AdminPage() {
       await fetch(`https://vigyaana-server.onrender.com/api/courses/${id}/status`, {
         method: 'PATCH',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
       toast.success('Course status updated');
@@ -53,11 +51,29 @@ export default function AdminPage() {
     <ProtectedRoute allowedRoles={['ADMIN']}>
       <div className="min-h-screen bg-white">
         <div className="container mx-auto px-6 py-8">
+          {/* ✅ Heading */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-teal-900 mb-2">Admin Panel</h1>
             <div className="w-20 h-1 bg-teal-700 rounded"></div>
           </div>
 
+          {/* ✅ Quick Admin Links */}
+          <div className="mb-8 mt-6 flex flex-wrap gap-4">
+            <a
+              href="/admin/blogs"
+              className="inline-block bg-teal-100 hover:bg-teal-200 text-teal-900 font-medium px-4 py-2 rounded-lg transition duration-200"
+            >
+              📰 Manage Blogs
+            </a>
+            <a
+              href="/admin/blogs/create"
+              className="inline-block bg-blue-100 hover:bg-blue-200 text-blue-900 font-medium px-4 py-2 rounded-lg transition duration-200"
+            >
+              ✍️ Write New Blog
+            </a>
+          </div>
+
+          {/* ✅ Course Approval Section */}
           {courses.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-24 h-24 mx-auto mb-6 bg-teal-50 rounded-full flex items-center justify-center">
@@ -117,7 +133,7 @@ export default function AdminPage() {
                           Approve
                         </button>
                       )}
-                      
+
                       {course.status === 'PUBLISHED' && (
                         <button
                           onClick={() => handleStatusChange(course.id, 'DRAFT')}
@@ -129,7 +145,7 @@ export default function AdminPage() {
                           Unpublish
                         </button>
                       )}
-                      
+
                       <button
                         onClick={() => handleDelete(course.id)}
                         className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-semibold border-2 border-red-200 hover:border-red-300 transition-colors duration-200 flex items-center justify-center gap-2"
