@@ -6,6 +6,7 @@ import Navbar from "@/compoenets/Navbar";
 import Script from "next/script"; // ✅ Added missing import
 import useAuthStore from '@/lib/store';
 import  Footer  from "@/compoenets/Footer";
+import { LenisProvider } from "@/compoenets/LenisProvider";
 
 
 export default function RootLayout({ children }) {
@@ -24,7 +25,9 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
       <body>
         <Toaster position="top-right" />
         <Navbar />
+       <LenisProvider>
         {children}
+        </LenisProvider>
         {/* ✅ Razorpay Script - Loads globally once */}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <Footer/>

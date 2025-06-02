@@ -1,4 +1,6 @@
 "use client";
+
+
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getRequest } from "@/lib/api";
@@ -19,6 +21,8 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
+ 
+
   const [courses, setCourses] = useState([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
   const { user } = useAuthStore();
