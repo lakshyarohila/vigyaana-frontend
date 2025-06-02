@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Users,
+  Ghost
 } from "lucide-react";
 import { useState } from "react";
 
@@ -55,13 +56,7 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             {/* About Us */}
-            <Link
-              href="/about-us"
-              className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
-            >
-              <Users className="h-4 w-4" />
-              <span className="font-semibold">About Us</span>
-            </Link>
+          
 
             {/* Blogs (always visible) */}
             <Link
@@ -69,7 +64,7 @@ export default function Navbar() {
               className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
             >
               <BookOpen className="h-4 w-4" />
-              <span className="font-semibold">Blogs</span>
+              <span className="font-medium font-sans">Blogs</span>
             </Link>
 
             {!user && (
@@ -142,6 +137,13 @@ export default function Navbar() {
                 </button>
               </>
             )}
+             <Link
+              href="/about-us"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+            >
+             <Ghost />
+              <span className="font-medium">About Us</span>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
