@@ -129,13 +129,7 @@ export default function Navbar() {
                       <Settings className="h-4 w-4" />
                       <span>Admin Panel</span>
                     </Link>
-                    <Link
-                      href="/admin/blogs/create"
-                      className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
-                    >
-                      <BookOpen className="h-4 w-4" />
-                      <span>Write Blog</span>
-                    </Link>
+                    
                   </>
                 )}
 
