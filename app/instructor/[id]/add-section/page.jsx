@@ -3,35 +3,48 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
 import { Upload, Video, FileText } from 'lucide-react';
 
 export default function AddSectionPage() {
   const { id: courseId } = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [title, setTitle] = useState('');
   const [video, setVideo] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const data = new FormData();
-    data.append('title', title);
-    data.append('courseId', courseId);
-    data.append('video', video);
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const data = new FormData();
+      data.append('title', title);
+      data.append('courseId', courseId);
+      data.append('video', video);
 
-    try {
-      await fetch('https://vigyaana-server.onrender.com/api/sections', {
+      const res = await fetch('https://vigyaana-server.onrender.com/api/sections', {
         method: 'POST',
         credentials: 'include',
         body: data,
       });
-      toast.success('Section added');
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to upload section');
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success('Section uploaded');
+      queryClient.invalidateQueries(['sections', courseId]);
       router.push('/instructor');
-    } catch (err) {
-      toast.error('Failed to upload section');
-    }
-  };
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -50,6 +63,15 @@ export default function AddSectionPage() {
   const handleDragLeave = (e) => {
     e.preventDefault();
     setIsDragOver(false);
+  };
+
+  const handleSubmit = () => {
+    if (!title || !video) {
+      toast.error('Both title and video are required');
+      return;
+    }
+
+    mutation.mutate();
   };
 
   return (
@@ -73,13 +95,11 @@ export default function AddSectionPage() {
                 Section Details
               </h2>
             </div>
-            
+
             <div className="p-8 space-y-6">
               {/* Title Input */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#1c4645]">
-                  Section Title
-                </label>
+                <label className="block text-sm font-medium text-[#1c4645]">Section Title</label>
                 <input
                   type="text"
                   value={title}
@@ -92,9 +112,7 @@ export default function AddSectionPage() {
 
               {/* Video Upload */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#1c4645]">
-                  Video File
-                </label>
+                <label className="block text-sm font-medium text-[#1c4645]">Video File</label>
                 <div
                   className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
                     isDragOver
@@ -111,12 +129,10 @@ export default function AddSectionPage() {
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-[#1c4645]/10 rounded-full mb-4">
                       <Upload className="w-6 h-6 text-[#1c4645]" />
                     </div>
-                    
+
                     {video ? (
                       <div>
-                        <p className="text-[#1c4645] font-medium mb-1">
-                          {video.name}
-                        </p>
+                        <p className="text-[#1c4645] font-medium mb-1">{video.name}</p>
                         <p className="text-sm text-gray-500">
                           {(video.size / (1024 * 1024)).toFixed(2)} MB
                         </p>
@@ -131,7 +147,7 @@ export default function AddSectionPage() {
                         </p>
                       </div>
                     )}
-                    
+
                     <input
                       type="file"
                       accept="video/*"
@@ -155,9 +171,10 @@ export default function AddSectionPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
+                  disabled={mutation.isLoading}
                   className="px-8 py-3 bg-[#1c4645] text-white rounded-lg hover:bg-[#2a5a58] transition-all duration-200 font-medium transform hover:scale-105 shadow-lg hover:shadow-xl"
                 >
-                  Upload Section
+                  {mutation.isLoading ? 'Uploading...' : 'Upload Section'}
                 </button>
               </div>
             </div>
