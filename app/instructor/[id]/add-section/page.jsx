@@ -98,7 +98,7 @@ export default function AddSectionPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter section title..."
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-[#1c4645]"
+                  className="w-full px-4 py-3 border-2 text-black border-gray-200 rounded-lg focus:border-[#1c4645]"
                 />
               </div>
 
@@ -137,7 +137,7 @@ export default function AddSectionPage() {
                       type="file"
                       accept="video/*"
                       onChange={(e) => setVideo(e.target.files[0])}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      className="absolute inset-0 w-full text-black h-full opacity-0 cursor-pointer"
                     />
                   </div>
                 </div>
