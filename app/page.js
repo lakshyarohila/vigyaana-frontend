@@ -1,68 +1,62 @@
-"use client";
+'use client';
 
-
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { getRequest } from "@/lib/api";
-import CourseCard from "@/compoenets/CourseCard";
-import Link from "next/link";
-import useAuthStore from "@/lib/store";
+import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { fetcher } from '@/lib/queryFetch';
+import CourseCard from '@/compoenets/CourseCard';
+import Link from 'next/link';
+import useAuthStore from '@/lib/store';
 import {
   BookOpen,
   Users,
   Trophy,
   ArrowRight,
   Star,
-  Clock,
   Globe,
   Zap,
   Award,
   CheckCircle,
-} from "lucide-react";
+} from 'lucide-react';
 
 export default function HomePage() {
- 
-
-  const [courses, setCourses] = useState([]);
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState([]);
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const courseList = await getRequest("/courses");
-        setCourses(courseList);
+  const {
+    data: courses = [],
+    isLoading: isCoursesLoading,
+    isError: isCoursesError,
+  } = useQuery({
+    queryKey: ['/courses'],
+    queryFn: fetcher,
+  });
 
-        // 🔐 If student, also fetch enrollments
-        if (user?.role === "STUDENT") {
-          const enrolled = await getRequest("/enrollments/my");
-          const ids = enrolled.map((e) => e.course.id);
-          setEnrolledCourseIds(ids);
-        }
-      } catch (err) {
-        console.error("Failed to load courses", err);
-      }
-    };
+  const {
+    data: enrolled = [],
+    isLoading: isEnrolledLoading,
+  } = useQuery({
+    queryKey: ['/enrollments/my'],
+    queryFn: fetcher,
+    enabled: !!user && user.role === 'STUDENT',
+  });
 
-    fetchCourses();
-  }, [user]);
+  const enrolledCourseIds = enrolled?.map((e) => e.course.id) || [];
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       {/* ✅ Hero Section */}
-      <section className="relative  overflow-hidden bg-gradient-to-br from-[#1c4645] via-[#2a5a58] to-[#1c4645] text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1c4645] via-[#2a5a58] to-[#1c4645] text-white">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 py-20 sm:py-24 lg:py-32">
           <div className="text-center">
             <motion.div
-              animate={{ y: [0, -20, 0] }} // Moves up and down
+              animate={{ y: [0, -20, 0] }}
               transition={{
                 duration: 2.6,
                 repeat: Infinity,
-                repeatType: "loop",
-                ease: "easeInOut",
+                repeatType: 'loop',
+                ease: 'easeInOut',
               }}
-              style={{ display: "inline-block" }}
+              style={{ display: 'inline-block' }}
               className="flex justify-center mb-6"
             >
               <div className="p-4 bg-[#e17100] rounded-full">
@@ -112,21 +106,21 @@ export default function HomePage() {
             {[
               {
                 icon: <Zap className="h-12 w-12" />,
-                title: "Learn at Your Pace",
+                title: 'Learn at Your Pace',
                 description:
-                  "Self-paced learning with lifetime access to all course materials",
+                  'Self-paced learning with lifetime access to all course materials',
               },
               {
                 icon: <Award className="h-12 w-12" />,
-                title: "Expert Instructors",
+                title: 'Expert Instructors',
                 description:
-                  "Learn from industry professionals with years of real-world experience",
+                  'Learn from industry professionals with years of real-world experience',
               },
               {
                 icon: <Globe className="h-12 w-12" />,
-                title: "Global Community",
+                title: 'Global Community',
                 description:
-                  "Join thousands of learners from around the world on your journey",
+                  'Join thousands of learners from around the world on your journey',
               },
             ].map((feature, index) => (
               <div
@@ -162,7 +156,11 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.length === 0 && (
+            {isCoursesLoading ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-xl text-gray-500">Loading courses...</p>
+              </div>
+            ) : courses.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-xl text-gray-500">
@@ -172,14 +170,15 @@ export default function HomePage() {
                   Check back soon for new courses!
                 </p>
               </div>
+            ) : (
+              courses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  isEnrolled={enrolledCourseIds.includes(course.id)}
+                />
+              ))
             )}
-            {courses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                isEnrolled={enrolledCourseIds.includes(course.id)}
-              />
-            ))}
           </div>
         </div>
       </section>
@@ -191,23 +190,23 @@ export default function HomePage() {
             {[
               {
                 icon: <Users className="h-8 w-8" />,
-                number: "10,000+",
-                label: "Active Students",
+                number: '10,000+',
+                label: 'Active Students',
               },
               {
                 icon: <BookOpen className="h-8 w-8" />,
-                number: "500+",
-                label: "Courses",
+                number: '500+',
+                label: 'Courses',
               },
               {
                 icon: <Trophy className="h-8 w-8" />,
-                number: "50+",
-                label: "Expert Instructors",
+                number: '50+',
+                label: 'Expert Instructors',
               },
               {
                 icon: <Star className="h-8 w-8" />,
-                number: "4.9/5",
-                label: "Average Rating",
+                number: '4.9/5',
+                label: 'Average Rating',
               },
             ].map((stat, index) => (
               <div key={index} className="p-6">
@@ -238,24 +237,24 @@ export default function HomePage() {
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                name: "Aarav M.",
-                role: "Full-Stack Developer",
+                name: 'Aarav M.',
+                role: 'Full-Stack Developer',
                 quote:
-                  "Vigyana helped me learn full-stack development at my own pace! The instructors are amazing and the content is top-notch.",
+                  'Vigyana helped me learn full-stack development at my own pace! The instructors are amazing and the content is top-notch.',
                 rating: 5,
               },
               {
-                name: "Priya S.",
-                role: "UI/UX Designer",
+                name: 'Priya S.',
+                role: 'UI/UX Designer',
                 quote:
-                  "Super clean interface, top-quality instructors. Love it! The courses are well-structured and easy to follow.",
+                  'Super clean interface, top-quality instructors. Love it! The courses are well-structured and easy to follow.',
                 rating: 5,
               },
               {
-                name: "Rohan K.",
-                role: "Software Engineer",
+                name: 'Rohan K.',
+                role: 'Software Engineer',
                 quote:
-                  "I got my first job after completing 2 courses on Vigyana. The practical projects really helped me build a strong portfolio.",
+                  'I got my first job after completing 2 courses on Vigyana. The practical projects really helped me build a strong portfolio.',
                 rating: 5,
               },
             ].map((testimonial, index) => (

@@ -7,8 +7,8 @@ import Script from "next/script"; // ✅ Added missing import
 import useAuthStore from '@/lib/store';
 import  Footer  from "@/compoenets/Footer";
 import { LenisProvider } from "@/compoenets/LenisProvider";
-
-
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from "@/lib/react-query";
 export default function RootLayout({ children }) {
 const checkAuth = useAuthStore((state) => state.checkAuth);
 
@@ -26,7 +26,9 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
         <Toaster position="top-right" />
         <Navbar />
        <LenisProvider>
+       <QueryClientProvider client={queryClient}>
         {children}
+        </QueryClientProvider>
         </LenisProvider>
         {/* ✅ Razorpay Script - Loads globally once */}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
