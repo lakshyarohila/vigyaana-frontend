@@ -1,51 +1,55 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getRequest } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { fetcher } from '@/lib/queryFetch';
 import useAuthStore from '@/lib/store';
 import Link from 'next/link';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
-import { BookOpen, Play, CheckCircle, Clock, User, TrendingUp } from 'lucide-react';
+import {
+  BookOpen,
+  Play,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+} from 'lucide-react';
 
 export default function DashboardPage() {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
 
-  useEffect(() => {
-    getRequest('/enrollments/my')
-      .then((data) => {
-        setCourses(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        console.log('Failed to fetch enrolled courses');
-        setLoading(false);
-      });
-  }, []);
+  const {
+    data: courses = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['/enrollments/my'],
+    queryFn: fetcher,
+    enabled: !!user,
+  });
 
   const totalCourses = courses.length;
-  const completedCourses = courses.filter(c => c.completed).length;
-  const averageProgress = courses.length > 0 
-    ? Math.round(courses.reduce((sum, course) => sum + course.progress, 0) / courses.length)
-    : 0;
+  const completedCourses = courses.filter((c) => c.completed).length;
+  const averageProgress =
+    courses.length > 0
+      ? Math.round(
+          courses.reduce((sum, course) => sum + course.progress, 0) / courses.length
+        )
+      : 0;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <ProtectedRoute allowedRoles={['STUDENT']}>
         <div className="min-h-screen bg-white p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
-                ))}
-              </div>
+          <div className="max-w-7xl mx-auto animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-80 bg-gray-200 rounded-lg"></div>
+              ))}
             </div>
           </div>
         </div>
@@ -103,7 +107,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* Enrolled Courses */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-[#1c4645] mb-4 flex items-center gap-2">
               <BookOpen className="h-6 w-6" />
@@ -114,7 +118,9 @@ export default function DashboardPage() {
           {courses.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-4">You haven't enrolled in any courses yet.</p>
+              <p className="text-gray-500 text-lg mb-4">
+                You haven't enrolled in any courses yet.
+              </p>
               <button className="bg-[#1c4645] text-white px-6 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center gap-2 mx-auto">
                 <BookOpen className="h-5 w-5" />
                 Browse Courses
@@ -123,12 +129,15 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {courses.map(({ course, progress, completed }) => (
-                <div key={course.id} className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden">
+                <div
+                  key={course.id}
+                  className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
+                >
                   <div className="relative">
-                    <img 
-                      src={course.thumbnailUrl} 
+                    <img
+                      src={course.thumbnailUrl}
                       alt={course.title}
-                      className="w-full h-48 object-cover" 
+                      className="w-full h-48 object-cover"
                     />
                     {completed && (
                       <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
@@ -141,10 +150,12 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-[#1c4645] mb-3">{course.title}</h3>
-                    
+                    <h3 className="text-xl font-bold text-[#1c4645] mb-3">
+                      {course.title}
+                    </h3>
+
                     {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-2">
@@ -152,19 +163,21 @@ export default function DashboardPage() {
                           <Clock className="h-4 w-4" />
                           Progress
                         </span>
-                        <span className="text-sm font-bold text-[#1c4645]">{progress}% completed</span>
+                        <span className="text-sm font-bold text-[#1c4645]">
+                          {progress}% completed
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-[#1c4645] h-2 rounded-full transition-all duration-300" 
-                          style={{width: `${progress}%`}}
+                        <div
+                          className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${progress}%` }}
                         ></div>
                       </div>
                     </div>
 
                     {/* Continue Button */}
-                    <Link 
-                      href={`/dashboard/course/${course.id}`} 
+                    <Link
+                      href={`/dashboard/course/${course.id}`}
                       className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium"
                     >
                       <Play className="h-4 w-4" />
