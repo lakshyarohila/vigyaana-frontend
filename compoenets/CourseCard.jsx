@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from 'next.js';
 import { 
   CheckCircle, 
   BookOpen, 
@@ -13,11 +13,11 @@ export default function CourseCard({ course, isEnrolled }) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
       {/* Course Image */}
-      <div className="relative">
+      <div className="relative h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
         <img 
           src={course.thumbnailUrl || '/api/placeholder/400/240'} 
           alt={course.title}
-          className="w-full h-48 object-cover"
+          className="max-w-full max-h-full w-auto h-auto object-contain"
         />
         
         {/* Enrolled Status Badge */}
