@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/queryFetch';
-import CourseCard from '@/components/CourseCard';
+import CourseCard from '@/compoenets/CourseCard';
 import useAuthStore from '@/lib/store';
 import {
   BookOpen,
