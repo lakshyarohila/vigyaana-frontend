@@ -1,4 +1,4 @@
-import Link from 'next.js';
+import Link from 'next/link';
 import { 
   CheckCircle, 
   BookOpen, 
