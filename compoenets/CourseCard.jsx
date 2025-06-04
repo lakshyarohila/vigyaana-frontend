@@ -37,7 +37,7 @@ export default function CourseCard({ course, isEnrolled }) {
       </div>
 
       {/* Course Content - ALWAYS link to detail page */}
-      <Link href={`/course/${course.id}`} className="block">
+      <Link href={`/courses/${course.id}`} className="block">
         <div className="p-6 hover:bg-gray-50 transition-colors">
           {/* Course Title */}
           <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem]">
