@@ -61,7 +61,7 @@ const Footer = () => {
 
             {/* Copyright */}
             <p className="text-sm text-gray-400">
-              © 2025 Vigyaana. All rights reserved.
+              © 2025-26 Vigyaana. All rights reserved.
             </p>
           </div>
         </div>
