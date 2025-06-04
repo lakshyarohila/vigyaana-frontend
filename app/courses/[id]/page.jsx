@@ -14,9 +14,12 @@ import {
   CheckCircle,
   ArrowLeft,
   Award,
-  Video
+  Video,
+  MessageSquare,
+  Trash2,
+  Send
 } from 'lucide-react';
-import { getRequest, postRequest } from '@/lib/api';
+import { getRequest, postRequest, deleteRequest } from '@/lib/api';
 import useAuthStore from '@/lib/store';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -29,6 +32,10 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     getRequest('/courses')
@@ -45,7 +52,22 @@ export default function CourseDetail() {
         .then((res) => setIsEnrolled(res.enrolled))
         .catch(() => {});
     }
+
+    // Load reviews
+    loadReviews();
   }, [id]);
+
+  const loadReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const reviewsData = await getRequest(`/reviews/${id}`);
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   const handleEnroll = async () => {
     try {
@@ -81,6 +103,82 @@ export default function CourseDetail() {
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error('Please login to add a review');
+      return;
+    }
+
+    if (!newReview.comment.trim()) {
+      toast.error('Please write a review comment');
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      await postRequest('/reviews', {
+        courseId: id,
+        rating: newReview.rating,
+        comment: newReview.comment.trim()
+      });
+      
+      toast.success('Review added successfully!');
+      setNewReview({ rating: 5, comment: '' });
+      loadReviews(); // Reload reviews
+    } catch (error) {
+      toast.error(error.message || 'Failed to add review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!confirm('Are you sure you want to delete this review?')) return;
+
+    try {
+      await deleteRequest(`/reviews/${reviewId}`);
+      toast.success('Review deleted successfully');
+      loadReviews(); // Reload reviews
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete review');
+    }
+  };
+
+  const renderStars = (rating, size = 16, interactive = false, onRatingChange = null) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            size={size}
+            className={`${
+              star <= rating 
+                ? 'text-yellow-400 fill-yellow-400' 
+                : 'text-gray-300'
+            } ${interactive ? 'cursor-pointer hover:text-yellow-400' : ''}`}
+            onClick={() => interactive && onRatingChange && onRatingChange(star)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) return 0;
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return (total / reviews.length).toFixed(1);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   if (loading) {
@@ -138,6 +236,14 @@ export default function CourseDetail() {
                   <User size={16} className="text-gray-500" />
                   <span className="text-gray-700">{course.createdBy?.name}</span>
                 </div>
+                {reviews.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    {renderStars(Math.round(calculateAverageRating()))}
+                    <span className="text-gray-700">
+                      {calculateAverageRating()} ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
+                    </span>
+                  </div>
+                )}
               </div>
 
               <p className="text-gray-700 leading-relaxed text-lg">{course.description}</p>
@@ -173,6 +279,119 @@ export default function CourseDetail() {
                 Course Content
               </h2>
               <p className="text-gray-600">Course content will be available after enrollment.</p>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <MessageSquare className="text-gray-700" size={24} />
+                Student Reviews
+              </h2>
+
+              {/* Review Summary */}
+              {reviews.length > 0 && (
+                <div className="mb-8 p-6 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="text-4xl font-bold text-gray-900">{calculateAverageRating()}</div>
+                    <div>
+                      {renderStars(Math.round(calculateAverageRating()), 20)}
+                      <p className="text-gray-600 mt-1">
+                        Based on {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add Review Form */}
+              {user && isEnrolled && (
+                <form onSubmit={handleSubmitReview} className="mb-8 p-6 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Your Review</h3>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rating
+                    </label>
+                    {renderStars(
+                      newReview.rating, 
+                      24, 
+                      true, 
+                      (rating) => setNewReview({...newReview, rating})
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Review
+                    </label>
+                    <textarea
+                      value={newReview.comment}
+                      onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
+                      placeholder="Share your experience with this course..."
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="flex items-center gap-2 px-6 py-3 text-white rounded-lg font-semibold transition-all duration-200 hover:shadow-md disabled:opacity-50"
+                    style={{ backgroundColor: '#1c4645' }}
+                  >
+                    <Send size={16} />
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </form>
+              )}
+
+              {/* Reviews List */}
+              <div className="space-y-6">
+                {reviewsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-500">Loading reviews...</div>
+                  </div>
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="mx-auto text-gray-400 mb-4" size={48} />
+                    <p className="text-gray-500">No reviews yet. Be the first to review this course!</p>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
+                    <div key={review.id} className="border-b border-gray-100 pb-6 last:border-b-0">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#1c4645' }}>
+                            <User className="text-white" size={20} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{review.user?.name || 'Anonymous'}</p>
+                            <div className="flex items-center gap-2">
+                              {renderStars(review.rating)}
+                              <span className="text-sm text-gray-500">
+                                {formatDate(review.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {user && (user.id === review.userId || user.role === 'ADMIN') && (
+                          <button
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Delete review"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                      
+                      <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
