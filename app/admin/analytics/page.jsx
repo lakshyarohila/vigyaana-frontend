@@ -298,18 +298,83 @@ export default function AdminAnalyticsPage() {
 
     const fetchAll = async () => {
       try {
+        console.log('🚀 Fetching analytics data...');
+        
         const [statsRes, revenueRes, usersRes, popularRes] = await Promise.all([
           getRequest('/admin/stats'),
           getRequest('/admin/stats/revenue'),
           getRequest('/admin/stats/users'),
           getRequest('/admin/stats/popular-courses'),
         ]);
-        setStats(statsRes);
-        setRevenueData(revenueRes);
-        setUserData(usersRes);
-        setPopularCourses(popularRes);
+
+        // Debug logging
+        console.log('📊 Stats Response:', statsRes);
+        console.log('💰 Revenue Response:', revenueRes);
+        console.log('👥 Users Response:', usersRes);
+        console.log('🏆 Popular Courses Response:', popularRes);
+
+        // Check data structure
+        console.log('Revenue Data Structure:', {
+          isArray: Array.isArray(revenueRes),
+          length: revenueRes?.length || 0,
+          firstItem: revenueRes?.[0],
+          hasRequiredFields: revenueRes?.[0]?.label && revenueRes?.[0]?.totalRevenue !== undefined
+        });
+
+        console.log('User Data Structure:', {
+          isArray: Array.isArray(usersRes),
+          length: usersRes?.length || 0,
+          firstItem: usersRes?.[0],
+          hasRequiredFields: usersRes?.[0]?.label && usersRes?.[0]?.totalUsers !== undefined
+        });
+
+        console.log('Popular Courses Structure:', {
+          isArray: Array.isArray(popularRes),
+          length: popularRes?.length || 0,
+          firstItem: popularRes?.[0],
+          hasRequiredFields: popularRes?.[0]?.title && popularRes?.[0]?.enrollments !== undefined
+        });
+
+        // Safe data handling with validation
+        setStats(statsRes || {});
+        
+        // Ensure arrays and validate structure
+        const safeRevenueData = Array.isArray(revenueRes) 
+          ? revenueRes.filter(item => item && item.label && typeof item.totalRevenue === 'number')
+          : [];
+        
+        const safeUserData = Array.isArray(usersRes)
+          ? usersRes.filter(item => item && item.label && typeof item.totalUsers === 'number')
+          : [];
+        
+        const safePopularCourses = Array.isArray(popularRes)
+          ? popularRes.filter(item => item && item.title && typeof item.enrollments === 'number')
+          : [];
+        
+        setRevenueData(safeRevenueData);
+        setUserData(safeUserData);
+        setPopularCourses(safePopularCourses);
+        
+        // Log final data for debugging
+        console.log('Final processed data:', {
+          revenue: safeRevenueData,
+          users: safeUserData,
+          courses: safePopularCourses
+        });
+
       } catch (err) {
+        console.error('❌ Error fetching analytics:', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
         toast.error('Failed to fetch analytics data');
+        
+        // Set empty arrays on error
+        setRevenueData([]);
+        setUserData([]);
+        setPopularCourses([]);
       }
     };
 
@@ -332,15 +397,23 @@ export default function AdminAnalyticsPage() {
     <div className="min-h-screen bg-white px-6 py-10">
       <h1 className="text-3xl font-bold text-[#1c4645] mb-8">📊 Admin Analytics Dashboard</h1>
 
+      {/* Debug Info */}
+      <div className="mb-8 p-4 bg-gray-100 rounded-lg">
+        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
+        <p className="text-xs text-gray-600">Revenue Data: {revenueData.length} items</p>
+        <p className="text-xs text-gray-600">User Data: {userData.length} items</p>
+        <p className="text-xs text-gray-600">Popular Courses: {popularCourses.length} items</p>
+      </div>
+
       {/* Summary Cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {[
-            { label: 'Total Users', value: stats.users },
-            { label: 'Total Courses', value: stats.courses },
-            { label: 'Total Enrollments', value: stats.enrollments },
-            { label: 'Total Reviews', value: stats.reviews },
-            { label: 'Total Revenue', value: `₹${stats.revenue}` },
+            { label: 'Total Users', value: stats.users || 0 },
+            { label: 'Total Courses', value: stats.courses || 0 },
+            { label: 'Total Enrollments', value: stats.enrollments || 0 },
+            { label: 'Total Reviews', value: stats.reviews || 0 },
+            { label: 'Total Revenue', value: `₹${stats.revenue || 0}` },
           ].map((item, i) => (
             <div key={i} className="p-6 bg-[#f1f5f9] border-l-4 border-[#1c4645] rounded-lg shadow hover:shadow-lg transition-shadow">
               <h2 className="text-sm text-gray-500 font-medium mb-2">{item.label}</h2>
@@ -354,13 +427,16 @@ export default function AdminAnalyticsPage() {
         {/* Revenue Chart */}
         <div className="bg-white border border-gray-100 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
           <h2 className="text-lg font-bold mb-4 text-[#1c4645]">📈 Monthly Revenue</h2>
-          {revenueData.length > 0 ? (
+          {revenueData && revenueData.length > 0 ? (
             <div className="flex justify-center">
               <LineChart data={revenueData} width={450} height={300} />
             </div>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-gray-500">
-              No revenue data available
+              <div className="text-center">
+                <p>No revenue data available</p>
+                <p className="text-sm mt-2">Check console for API response details</p>
+              </div>
             </div>
           )}
         </div>
@@ -368,13 +444,16 @@ export default function AdminAnalyticsPage() {
         {/* New Users Chart */}
         <div className="bg-white border border-gray-100 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
           <h2 className="text-lg font-bold mb-4 text-[#1c4645]">👤 Monthly New Users</h2>
-          {userData.length > 0 ? (
+          {userData && userData.length > 0 ? (
             <div className="flex justify-center">
               <BarChart data={userData} width={450} height={300} color="#1c4645" />
             </div>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-gray-500">
-              No user data available
+              <div className="text-center">
+                <p>No user data available</p>
+                <p className="text-sm mt-2">Check console for API response details</p>
+              </div>
             </div>
           )}
         </div>
@@ -383,13 +462,16 @@ export default function AdminAnalyticsPage() {
       {/* Top Enrolled Courses */}
       <div className="bg-white border border-gray-100 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
         <h2 className="text-lg font-bold mb-4 text-[#1c4645]">🏆 Top 5 Popular Courses</h2>
-        {popularCourses.length > 0 ? (
+        {popularCourses && popularCourses.length > 0 ? (
           <div className="flex justify-center">
             <BarChart data={popularCourses} width={800} height={400} color="#22c55e" horizontal={true} />
           </div>
         ) : (
           <div className="h-[400px] flex items-center justify-center text-gray-500">
-            No course data available
+            <div className="text-center">
+              <p>No course data available</p>
+              <p className="text-sm mt-2">Check console for API response details</p>
+            </div>
           </div>
         )}
       </div>
