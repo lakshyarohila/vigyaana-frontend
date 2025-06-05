@@ -71,6 +71,12 @@ export default function AdminPage() {
             >
               ✍️ Write New Blog
             </a>
+            <a
+              href="/admin/analytics"
+              className="inline-block bg-green-100 hover:bg-green-200 text-green-900 font-medium px-4 py-2 rounded-lg transition duration-200"
+            >
+              📊 View Analytics
+            </a>
           </div>
 
           {/* ✅ Course Approval Section */}
@@ -104,12 +110,12 @@ export default function AdminPage() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="p-6">
                     <h2 className="text-xl font-bold text-teal-900 mb-3 line-clamp-2 min-h-[3.5rem]">
                       {course.title}
                     </h2>
-                    
+
                     <div className="flex items-center mb-4">
                       <div className="w-8 h-8 bg-teal-700 rounded-full flex items-center justify-center mr-3">
                         <span className="text-white text-sm font-semibold">
@@ -120,7 +126,7 @@ export default function AdminPage() {
                         {course.createdBy?.name || 'Unknown Author'}
                       </p>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-2 pt-4 border-t border-teal-100">
                       {course.status === 'DRAFT' && (
                         <button
