@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import * as d3 from 'd3';
+
+import * as d3 from 'd3'
 import { getRequest } from '@/lib/api';
 import useAuthStore from '@/lib/store';
 import { useRouter } from 'next/navigation';
