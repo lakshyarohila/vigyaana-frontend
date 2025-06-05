@@ -57,7 +57,7 @@ export default function BlogsPage() {
               <div className="relative overflow-hidden rounded-lg mb-6">
                 <img 
                   src={blog.imageUrl} 
-                  className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+                  className="w-full h-64 object-cover  transition-transform duration-300 group-hover:scale-105" 
                   alt={blog.title}
                 />
                 <div 
