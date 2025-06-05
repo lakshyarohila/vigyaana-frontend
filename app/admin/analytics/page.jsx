@@ -398,13 +398,7 @@ export default function AdminAnalyticsPage() {
       <h1 className="text-3xl font-bold text-[#1c4645] mb-8">📊 Admin Analytics Dashboard</h1>
 
       {/* Debug Info */}
-      <div className="mb-8 p-4 bg-gray-100 rounded-lg">
-        <h3 className="font-bold text-sm mb-2">Debug Info:</h3>
-        <p className="text-xs text-gray-600">Revenue Data: {revenueData.length} items</p>
-        <p className="text-xs text-gray-600">User Data: {userData.length} items</p>
-        <p className="text-xs text-gray-600">Popular Courses: {popularCourses.length} items</p>
-      </div>
-
+    
       {/* Summary Cards */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
