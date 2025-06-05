@@ -308,32 +308,7 @@ export default function AdminAnalyticsPage() {
         ]);
 
         // Debug logging
-        console.log('📊 Stats Response:', statsRes);
-        console.log('💰 Revenue Response:', revenueRes);
-        console.log('👥 Users Response:', usersRes);
-        console.log('🏆 Popular Courses Response:', popularRes);
-
-        // Check data structure
-        console.log('Revenue Data Structure:', {
-          isArray: Array.isArray(revenueRes),
-          length: revenueRes?.length || 0,
-          firstItem: revenueRes?.[0],
-          hasRequiredFields: revenueRes?.[0]?.label && revenueRes?.[0]?.totalRevenue !== undefined
-        });
-
-        console.log('User Data Structure:', {
-          isArray: Array.isArray(usersRes),
-          length: usersRes?.length || 0,
-          firstItem: usersRes?.[0],
-          hasRequiredFields: usersRes?.[0]?.label && usersRes?.[0]?.totalUsers !== undefined
-        });
-
-        console.log('Popular Courses Structure:', {
-          isArray: Array.isArray(popularRes),
-          length: popularRes?.length || 0,
-          firstItem: popularRes?.[0],
-          hasRequiredFields: popularRes?.[0]?.title && popularRes?.[0]?.enrollments !== undefined
-        });
+        
 
         // Safe data handling with validation
         setStats(statsRes || {});
