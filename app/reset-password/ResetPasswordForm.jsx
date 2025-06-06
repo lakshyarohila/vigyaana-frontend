@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { postRequest } from '@/lib/api';
 import { Lock, RotateCw } from 'lucide-react';
+import { Suspense } from 'react';
 
-export default function ResetPasswordForm() {
+function ResetForm() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
   const router = useRouter();
 
   const [password, setPassword] = useState('');
@@ -16,6 +17,7 @@ export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (token === null) return; // wait for token to resolve
     if (!token) {
       toast.error('Invalid or missing token');
       router.push('/');
@@ -24,10 +26,15 @@ export default function ResetPasswordForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return;
+
+    if (!token || !password) {
+      toast.error('Token or password is missing');
+      return;
+    }
 
     if (password !== confirm) {
-      return toast.error('Passwords do not match');
+      toast.error('Passwords do not match');
+      return;
     }
 
     setLoading(true);
@@ -45,9 +52,12 @@ export default function ResetPasswordForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-white">
       <div className="max-w-md w-full bg-gray-50 border border-gray-200 p-8 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-[#1c4645] mb-4 text-center">🔒 Reset Your Password</h1>
+        <h1 className="text-2xl font-bold text-[#1c4645] mb-4 text-center">
+          🔒 Reset Your Password
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Password */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               New Password
@@ -68,6 +78,7 @@ export default function ResetPasswordForm() {
             </div>
           </div>
 
+          {/* Confirm Password */}
           <div>
             <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-2">
               Confirm Password
@@ -88,6 +99,7 @@ export default function ResetPasswordForm() {
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -99,5 +111,14 @@ export default function ResetPasswordForm() {
         </form>
       </div>
     </div>
+  );
+}
+
+// 👇 Wrap the main component in Suspense
+export default function ResetPasswordPageWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center py-32 text-gray-500">Loading form...</div>}>
+      <ResetForm />
+    </Suspense>
   );
 }
