@@ -15,20 +15,35 @@ function ResetForm() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isTokenReady, setIsTokenReady] = useState(false);
 
   useEffect(() => {
-    if (token === null) return; // wait for token to resolve
-    if (!token) {
-      toast.error('Invalid or missing token');
-      router.push('/');
-    }
+    // Add a small delay to ensure searchParams are fully loaded
+    const timer = setTimeout(() => {
+      setIsTokenReady(true);
+      console.log('Token from URL:', token); // Debug log
+      
+      if (!token || token.trim() === '') {
+        toast.error('Invalid or missing reset token');
+        router.push('/forgot-password');
+        return;
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [token, router]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!token || !password) {
-      toast.error('Token or password is missing');
+    // Additional validation
+    if (!token || token.trim() === '') {
+      toast.error('Reset token is missing');
+      return;
+    }
+
+    if (!password || password.trim() === '') {
+      toast.error('Password is required');
       return;
     }
 
@@ -37,17 +52,64 @@ function ResetForm() {
       return;
     }
 
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
     try {
-      await postRequest('/auth/reset-password', { token, password });
+      console.log('=== PASSWORD RESET DEBUG ===');
+      console.log('Token:', token);
+      console.log('Token length:', token.length);
+      console.log('Password length:', password.length);
+      console.log('Request payload:', { token: token.trim(), password: password.trim() });
+      
+      // Try different request formats to debug
+      const requestData = { 
+        token: token.trim(), 
+        password: password.trim() 
+      };
+      
+      // Try with additional fields that might be expected
+      const response = await postRequest('/auth/reset-password', requestData);
+      
+      console.log('Reset response:', response);
       toast.success('Password updated successfully!');
       router.push('/login');
     } catch (err) {
-      toast.error(err.message || 'Reset failed');
+      console.error('=== PASSWORD RESET ERROR ===');
+      console.error('Full error object:', err);
+      console.error('Error message:', err.message);
+      console.error('Error status:', err.status);
+      console.error('Error response:', err.response);
+      
+      // Show more specific error messages
+      if (err.status === 400) {
+        toast.error('Invalid request. Token may be expired or invalid.');
+      } else if (err.status === 404) {
+        toast.error('Reset endpoint not found.');
+      } else if (err.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error(err.message || 'Password reset failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading while token is being processed
+  if (!isTokenReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
+          <p className="text-gray-600">Validating reset link...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-white">
@@ -70,10 +132,11 @@ function ResetForm() {
                 type="password"
                 id="password"
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1c4645] text-black transition"
-                placeholder="Enter new password"
+                placeholder="Enter new password (min 6 chars)"
               />
             </div>
           </div>
@@ -99,25 +162,49 @@ function ResetForm() {
             </div>
           </div>
 
+          {/* Password match indicator */}
+          {confirm && (
+            <div className="text-sm">
+              {password === confirm ? (
+                <span className="text-green-600">✓ Passwords match</span>
+              ) : (
+                <span className="text-red-600">✗ Passwords don't match</span>
+              )}
+            </div>
+          )}
+
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1c4645] text-white font-medium rounded-lg hover:bg-[#2a6b69] transition duration-200"
+            disabled={loading || !password || !confirm || password !== confirm}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#1c4645] text-white font-medium rounded-lg hover:bg-[#2a6b69] disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
           >
-            <RotateCw className="h-5 w-5" />
+            <RotateCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             {loading ? 'Resetting...' : 'Reset Password'}
           </button>
         </form>
+
+        {/* Debug info (remove in production) */}
+        <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-gray-600">
+          <strong>Debug:</strong> Token present: {token ? 'Yes' : 'No'}
+          {token && <div>Token length: {token.length}</div>}
+        </div>
       </div>
     </div>
   );
 }
 
-// 👇 Wrap the main component in Suspense
+// Wrap the main component in Suspense
 export default function ResetPasswordPageWrapper() {
   return (
-    <Suspense fallback={<div className="text-center py-32 text-gray-500">Loading form...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center px-4 bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading reset form...</p>
+        </div>
+      </div>
+    }>
       <ResetForm />
     </Suspense>
   );
