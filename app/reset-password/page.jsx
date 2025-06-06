@@ -63,15 +63,14 @@ function ResetForm() {
       console.log('Token:', token);
       console.log('Token length:', token.length);
       console.log('Password length:', password.length);
-      console.log('Request payload:', { token: token.trim(), password: password.trim() });
       
-      // Try different request formats to debug
+      // Your backend expects 'newPassword', not 'password'
       const requestData = { 
         token: token.trim(), 
-        password: password.trim() 
+        newPassword: password.trim()  // Changed from 'password' to 'newPassword'
       };
+      console.log('Request payload:', requestData);
       
-      // Try with additional fields that might be expected
       const response = await postRequest('/auth/reset-password', requestData);
       
       console.log('Reset response:', response);
