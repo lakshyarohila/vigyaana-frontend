@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,7 +24,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const res = await postRequest("/auth/login", form);
       setUser(res.user);
@@ -91,10 +90,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -116,10 +112,7 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -146,6 +139,17 @@ export default function LoginPage() {
                   ) : (
                     <Eye className="h-5 w-5 text-gray-400 hover:text-[#1c4645] transition-colors" />
                   )}
+                </button>
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-right mt-2">
+                <button
+                  type="button"
+                  onClick={() => router.push('/forgot-password')}
+                  className="text-sm text-[#1c4645] hover:underline font-medium"
+                >
+                  Forgot password?
                 </button>
               </div>
             </div>
