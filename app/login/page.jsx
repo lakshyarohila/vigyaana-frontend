@@ -4,7 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle, Loader2 } from
 import useAuthStore from '../store/authStore'; // Adjust path as needed
 
 const AuthComponent = () => {
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'forgot-password', 'reset-password'
+  const [authMode, setAuthMode] = useState('login'); 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
