@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Google login token handling
+ 
   useEffect(() => {
     const token = searchParams.get("token");
     if (token) {
