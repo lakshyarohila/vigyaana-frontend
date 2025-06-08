@@ -215,34 +215,127 @@ function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Add validation
+    if (!form.email || !form.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    console.log("Attempting regular login with:", { email: form.email, password: "***" });
+    
     try {
       const res = await postRequest("/auth/login", form);
       console.log("Login response:", res);
+      console.log("Response keys:", Object.keys(res || {}));
+      console.log("Response type:", typeof res);
       
-      if (res.user && res.token) {
-        // Store token
-        localStorage.setItem("token", res.token);
-        
-        // Set user in store
-        setUser(res.user);
-        
-        toast.success("Logged in successfully!", {
-          icon: "🚀",
-          style: {
-            backgroundColor: "#332a38",
-            color: "#fff",
-            fontWeight: "bold",
-            borderRadius: "8px",
-          },
-        });
-        
-        router.push("/");
+      let token = null;
+      let userData = null;
+      
+      // Check different possible response formats
+      if (res && res.user && res.token) {
+        console.log("Standard response format detected");
+        token = res.token;
+        userData = res.user;
+      } else if (res && res.data && res.data.user && res.data.token) {
+        console.log("Nested data response format detected");
+        token = res.data.token;
+        userData = res.data.user;
+      } else if (res && res.token && res.id) {
+        console.log("Flat response format detected");
+        token = res.token;
+        userData = res;
+      } else if (res && res.accessToken && res.user) {
+        console.log("AccessToken format detected");
+        token = res.accessToken;
+        userData = res.user;
+      } else if (res && res.token && !res.user && !res.id) {
+        console.log("Token only format detected");
+        token = res.token;
+        // Try to decode token to get user info
+        try {
+          const tokenParts = token.split('.');
+          const payload = JSON.parse(atob(tokenParts[1]));
+          userData = { id: payload.id, email: payload.email, name: payload.name };
+        } catch (e) {
+          console.error("Failed to decode token:", e);
+          userData = { id: Date.now(), email: form.email }; // Fallback
+        }
       } else {
-        throw new Error("Invalid login response");
+        // Log the full response to understand the format
+        console.error("Unexpected response format:", JSON.stringify(res, null, 2));
+        
+        // Try to find token and user data in any property
+        const responseStr = JSON.stringify(res).toLowerCase();
+        if (responseStr.includes('token') || responseStr.includes('jwt')) {
+          // Extract any token-like string
+          const tokenMatch = JSON.stringify(res).match(/"[^"]*token[^"]*":\s*"([^"]+)"/i);
+          if (tokenMatch) {
+            token = tokenMatch[1];
+            console.log("Found token in response:", token.substring(0, 20) + "...");
+          }
+        }
+        
+        // Try to find user data
+        if (res && typeof res === 'object') {
+          // Look for user-like properties
+          if (res.email || res.id || res.username) {
+            userData = res;
+            console.log("Using full response as user data");
+          }
+        }
+        
+        if (!token && !userData) {
+          throw new Error("Invalid login response format");
+        }
       }
+      
+      if (token) {
+        localStorage.setItem("token", token);
+        console.log("Token stored successfully");
+      }
+      
+      if (userData) {
+        setUser(userData);
+        console.log("User data set successfully:", userData);
+      }
+      
+      toast.success("Logged in successfully!", {
+        icon: "🚀",
+        style: {
+          backgroundColor: "#332a38",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "8px",
+        },
+      });
+      
+      router.push("/");
     } catch (err) {
-      console.error("Login error:", err);
-      toast.error(err.message || "Login failed");
+      console.error("Login error details:", {
+        message: err.message,
+        stack: err.stack,
+        response: err.response,
+        status: err.status
+      });
+      
+      // Provide more specific error messages
+      let errorMessage = "Login failed";
+      
+      if (err.message?.includes("401") || err.status === 401) {
+        errorMessage = "Invalid email or password";
+      } else if (err.message?.includes("422") || err.status === 422) {
+        errorMessage = "Please check your email format";
+      } else if (err.message?.includes("500") || err.status === 500) {
+        errorMessage = "Server error. Please try again later";
+      } else if (err.message?.includes("Network")) {
+        errorMessage = "Network error. Please check your connection";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
