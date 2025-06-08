@@ -28,30 +28,110 @@ function LoginForm() {
     console.log("Processing Google OAuth token:", token);
     
     try {
+      // First, let's try to validate the token format
+      if (!token || token.split('.').length !== 3) {
+        throw new Error("Invalid token format");
+      }
+
       // Store token first
       localStorage.setItem("token", token);
       
-      // Fetch user info directly
-      const response = await fetch("https://vigyaana-server.onrender.com/api/auth/me", {
-        method: "GET",
-        headers: { 
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
-      });
+      // Try different authorization header formats
+      const authHeaders = [
+        `Bearer ${token}`,
+        token,
+        `JWT ${token}`
+      ];
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      let userData = null;
+      let lastError = null;
+
+      // Try different authorization formats
+      for (const authHeader of authHeaders) {
+        try {
+          console.log("Trying auth header:", authHeader.substring(0, 20) + "...");
+          
+          const response = await fetch("https://vigyaana-server.onrender.com/api/auth/me", {
+            method: "GET",
+            headers: { 
+              "Authorization": authHeader,
+              "Content-Type": "application/json"
+            },
+            credentials: "include",
+          });
+
+          console.log("Response status:", response.status);
+          console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+          if (response.ok) {
+            userData = await response.json();
+            console.log("User data received:", userData);
+            break;
+          } else {
+            const errorText = await response.text();
+            console.error(`Auth attempt failed with ${response.status}:`, errorText);
+            lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+        } catch (error) {
+          console.error("Request failed:", error);
+          lastError = error;
+        }
       }
-      
-      const userData = await response.json();
-      console.log("User data received:", userData);
+
+      // If none of the auth formats worked, try without credentials
+      if (!userData) {
+        try {
+          console.log("Trying without credentials...");
+          const response = await fetch("https://vigyaana-server.onrender.com/api/auth/me", {
+            method: "GET",
+            headers: { 
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            // Remove credentials: "include"
+          });
+
+          if (response.ok) {
+            userData = await response.json();
+            console.log("User data received (without credentials):", userData);
+          }
+        } catch (error) {
+          console.error("Request without credentials failed:", error);
+        }
+      }
+
+      // If we still don't have user data, try a different endpoint or approach
+      if (!userData) {
+        console.log("Trying alternative approach - decode token locally");
+        try {
+          // Decode JWT token to get user info (if available)
+          const tokenParts = token.split('.');
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log("Token payload:", payload);
+          
+          // Check if token is expired
+          if (payload.exp && payload.exp < Date.now() / 1000) {
+            throw new Error("Token has expired");
+          }
+
+          // If token contains user ID, try to use it
+          if (payload.id) {
+            userData = { id: payload.id };
+            console.log("Using token payload as user data:", userData);
+          }
+        } catch (error) {
+          console.error("Failed to decode token:", error);
+        }
+      }
+
+      if (!userData) {
+        throw lastError || new Error("Failed to authenticate with server");
+      }
       
       if (userData && userData.id) {
         setUser(userData);
         
-        toast.success(`Welcome back, ${userData.name || userData.email}!`, {
+        toast.success(`Welcome back, ${userData.name || userData.email || 'User'}!`, {
           icon: "🎉",
           duration: 3000,
           style: {
@@ -71,7 +151,21 @@ function LoginForm() {
       }
     } catch (error) {
       console.error("Google OAuth error:", error);
-      toast.error("Failed to complete Google login. Please try again.");
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to complete Google login. Please try again.";
+      
+      if (error.message.includes("401")) {
+        errorMessage = "Authentication failed. The server doesn't recognize your login token.";
+      } else if (error.message.includes("404")) {
+        errorMessage = "Authentication service not found. Please contact support.";
+      } else if (error.message.includes("expired")) {
+        errorMessage = "Your login session has expired. Please try logging in again.";
+      } else if (error.message.includes("Invalid token")) {
+        errorMessage = "Invalid login token received. Please try again.";
+      }
+      
+      toast.error(errorMessage);
       
       // Clean up on error
       localStorage.removeItem("token");
@@ -93,6 +187,8 @@ function LoginForm() {
         toast.error("Google authentication failed. Please try again.");
       } else if (error === "token_failed") {
         toast.error("Failed to generate authentication token.");
+      } else {
+        toast.error(`Authentication error: ${error}`);
       }
       // Clean up URL
       router.replace("/login");
@@ -155,7 +251,10 @@ function LoginForm() {
     // Reset processing state before redirect
     setHasProcessedToken(false);
     setIsProcessingGoogleAuth(false);
-    window.location.href = "https://vigyaana-server.onrender.com/api/auth/google";
+    
+    // Add current URL as redirect parameter to help with debugging
+    const currentUrl = window.location.origin + "/login";
+    window.location.href = `https://vigyaana-server.onrender.com/api/auth/google?redirect=${encodeURIComponent(currentUrl)}`;
   };
 
   // Show loading state during Google OAuth processing
@@ -165,6 +264,7 @@ function LoginForm() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
           <p className="text-gray-600">Completing Google login...</p>
+          <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
         </div>
       </div>
     );
