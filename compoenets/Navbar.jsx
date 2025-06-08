@@ -56,10 +56,6 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* About Us */}
-          
-
-            {/* Blogs (always visible) */}
             <Link
               href="/blogs"
               className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
@@ -96,6 +92,15 @@ export default function Navbar() {
                   </span>
                 </div>
 
+                {/* ✅ Community Link */}
+                <Link
+                  href="/community"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+                >
+                  <Ghost className="h-4 w-4" />
+                  <span>Community</span>
+                </Link>
+
                 {user.role === "STUDENT" && (
                   <Link
                     href="/dashboard"
@@ -117,16 +122,13 @@ export default function Navbar() {
                 )}
 
                 {user.role === "ADMIN" && (
-                  <>
-                    <Link
-                      href="/admin"
-                      className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span>Admin Panel</span>
-                    </Link>
-                    
-                  </>
+                  <Link
+                    href="/admin"
+                    className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </Link>
                 )}
 
                 <button
@@ -138,45 +140,40 @@ export default function Navbar() {
                 </button>
               </>
             )}
-             <Link
+
+            <Link
               href="/about-us"
               className="flex items-center space-x-2 px-4 py-2 rounded-full hover:bg-[#2a5a58] transition-colors duration-200"
             >
-            <UsersGroupIcon/>
+              <UsersGroupIcon />
               <span className="font-medium">About Us</span>
             </Link>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-md hover:bg-[#2a5a58] transition-colors duration-200"
             >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+        {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-[#1c4645] border-t border-[#2a5a58] shadow-lg z-50">
             <div className="px-4 py-4 space-y-3">
-              {/* About Us */}
               <Link
                 href="/about-us"
                 className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-              <UsersGroupIcon/>
+                <UsersGroupIcon />
                 <span>About Us</span>
               </Link>
 
-              {/* Blogs */}
               <Link
                 href="/blogs"
                 className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
@@ -185,6 +182,17 @@ export default function Navbar() {
                 <BookOpen className="h-5 w-5" />
                 <span>Blogs</span>
               </Link>
+
+              {user && (
+                <Link
+                  href="/community"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Ghost className="h-5 w-5" />
+                  <span>Community</span>
+                </Link>
+              )}
 
               {!user && (
                 <>
@@ -239,17 +247,14 @@ export default function Navbar() {
                   )}
 
                   {user.role === "ADMIN" && (
-                    <>
-                      <Link
-                        href="/admin"
-                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <Settings className="h-5 w-5" />
-                        <span>Admin Panel</span>
-                      </Link>
-                     
-                    </>
+                    <Link
+                      href="/admin"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-[#2a5a58] transition-colors duration-200"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span>Admin Panel</span>
+                    </Link>
                   )}
 
                   <button
