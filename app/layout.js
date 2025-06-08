@@ -27,11 +27,11 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
         <Toaster position="top-right" />
         <Navbar />
        <LenisProvider>
-       <AuthInitializer>
+    
        <QueryClientProvider client={queryClient}>
         {children}
         </QueryClientProvider>
-        </AuthInitializer>
+       
         </LenisProvider>
         {/* ✅ Razorpay Script - Loads globally once */}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
