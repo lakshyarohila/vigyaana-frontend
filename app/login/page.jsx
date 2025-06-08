@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { postRequest } from "@/lib/api";
 import useAuthStore from "@/lib/store";
@@ -11,22 +11,84 @@ import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Shield } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setUser, user, checkAuth } = useAuthStore((state) => ({ 
-    setUser: state.setUser, 
-    user: state.user,
-    checkAuth: state.checkAuth 
-  }));
+  const setUser = useAuthStore((state) => state.setUser);
+  const user = useAuthStore((state) => state.user);
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isProcessingGoogleAuth, setIsProcessingGoogleAuth] = useState(false);
+  const [hasProcessedToken, setHasProcessedToken] = useState(false);
 
+  // Memoize the token processing function
+  const processGoogleToken = useCallback(async (token) => {
+    if (hasProcessedToken) return;
+    
+    setHasProcessedToken(true);
+    setIsProcessingGoogleAuth(true);
+    console.log("Processing Google OAuth token:", token);
+    
+    try {
+      // Store token first
+      localStorage.setItem("token", token);
+      
+      // Fetch user info directly
+      const response = await fetch("https://vigyaana-server.onrender.com/api/auth/me", {
+        method: "GET",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const userData = await response.json();
+      console.log("User data received:", userData);
+      
+      if (userData && userData.id) {
+        setUser(userData);
+        
+        toast.success(`Welcome back, ${userData.name || userData.email}!`, {
+          icon: "🎉",
+          duration: 3000,
+          style: {
+            backgroundColor: "#10b981",
+            color: "#fff",
+            fontWeight: "bold",
+            borderRadius: "8px",
+          },
+        });
+        
+        // Clean up URL and redirect after a short delay
+        setTimeout(() => {
+          router.replace("/");
+        }, 1000);
+      } else {
+        throw new Error("Invalid user data received");
+      }
+    } catch (error) {
+      console.error("Google OAuth error:", error);
+      toast.error("Failed to complete Google login. Please try again.");
+      
+      // Clean up on error
+      localStorage.removeItem("token");
+      setHasProcessedToken(false);
+      router.replace("/login");
+    } finally {
+      setIsProcessingGoogleAuth(false);
+    }
+  }, [hasProcessedToken, setUser, router]);
+
+  // Handle URL parameters
   useEffect(() => {
     const token = searchParams.get("token");
     const error = searchParams.get("error");
     
     // Handle OAuth errors
-    if (error) {
+    if (error && !hasProcessedToken) {
       if (error === "auth_failed") {
         toast.error("Google authentication failed. Please try again.");
       } else if (error === "token_failed") {
@@ -38,57 +100,18 @@ function LoginForm() {
     }
 
     // Handle successful OAuth with token
-    if (token && !isProcessingGoogleAuth) {
-      setIsProcessingGoogleAuth(true);
-      console.log("Processing Google OAuth token:", token);
-      
-      // Store token first
-      localStorage.setItem("token", token);
-      
-      // Use the store's checkAuth method instead of direct fetch
-      checkAuth()
-        .then((userData) => {
-          console.log("User data from checkAuth:", userData);
-          
-          if (userData && userData.id) {
-            toast.success(`Welcome back, ${userData.name || userData.email}!`, {
-              icon: "🎉",
-              duration: 3000,
-              style: {
-                backgroundColor: "#10b981",
-                color: "#fff",
-                fontWeight: "bold",
-                borderRadius: "8px",
-              },
-            });
-            
-            // Clean up URL and redirect
-            router.replace("/");
-          } else {
-            throw new Error("Invalid user data received");
-          }
-        })
-        .catch((error) => {
-          console.error("Google OAuth error:", error);
-          toast.error("Failed to complete Google login. Please try again.");
-          
-          // Clean up on error
-          localStorage.removeItem("token");
-          router.replace("/login");
-        })
-        .finally(() => {
-          setIsProcessingGoogleAuth(false);
-        });
+    if (token && !hasProcessedToken && !isProcessingGoogleAuth) {
+      processGoogleToken(token);
     }
-  }, [searchParams, setUser, router, isProcessingGoogleAuth]);
+  }, [searchParams, processGoogleToken, hasProcessedToken, isProcessingGoogleAuth, router]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not during Google auth processing)
   useEffect(() => {
-    if (user && user.id && !isProcessingGoogleAuth) {
+    if (user && user.id && !isProcessingGoogleAuth && !searchParams.get("token")) {
       console.log("User already logged in, redirecting to home");
       router.push("/");
     }
-  }, [user, router, isProcessingGoogleAuth]);
+  }, [user, router, isProcessingGoogleAuth, searchParams]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -129,6 +152,9 @@ function LoginForm() {
 
   const handleGoogleLogin = () => {
     console.log("Initiating Google login");
+    // Reset processing state before redirect
+    setHasProcessedToken(false);
+    setIsProcessingGoogleAuth(false);
     window.location.href = "https://vigyaana-server.onrender.com/api/auth/google";
   };
 
