@@ -11,32 +11,84 @@ import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Shield } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setUser = useAuthStore((state) => state.setUser);
+  const { setUser, user, checkAuth } = useAuthStore((state) => ({ 
+    setUser: state.setUser, 
+    user: state.user,
+    checkAuth: state.checkAuth 
+  }));
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [isProcessingGoogleAuth, setIsProcessingGoogleAuth] = useState(false);
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (token) {
+    const error = searchParams.get("error");
+    
+    // Handle OAuth errors
+    if (error) {
+      if (error === "auth_failed") {
+        toast.error("Google authentication failed. Please try again.");
+      } else if (error === "token_failed") {
+        toast.error("Failed to generate authentication token.");
+      }
+      // Clean up URL
+      router.replace("/login");
+      return;
+    }
+
+    // Handle successful OAuth with token
+    if (token && !isProcessingGoogleAuth) {
+      setIsProcessingGoogleAuth(true);
+      console.log("Processing Google OAuth token:", token);
+      
+      // Store token first
       localStorage.setItem("token", token);
-      fetch("https://vigyaana-server.onrender.com/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((user) => {
-          if (user?.id) {
-            setUser(user);
-            toast.success("Logged in with Google!");
-            router.push("/");
+      
+      // Use the store's checkAuth method instead of direct fetch
+      checkAuth()
+        .then((userData) => {
+          console.log("User data from checkAuth:", userData);
+          
+          if (userData && userData.id) {
+            toast.success(`Welcome back, ${userData.name || userData.email}!`, {
+              icon: "🎉",
+              duration: 3000,
+              style: {
+                backgroundColor: "#10b981",
+                color: "#fff",
+                fontWeight: "bold",
+                borderRadius: "8px",
+              },
+            });
+            
+            // Clean up URL and redirect
+            router.replace("/");
+          } else {
+            throw new Error("Invalid user data received");
           }
         })
-        .catch(() => {
-          toast.error("Failed to fetch user info from token");
+        .catch((error) => {
+          console.error("Google OAuth error:", error);
+          toast.error("Failed to complete Google login. Please try again.");
+          
+          // Clean up on error
+          localStorage.removeItem("token");
+          router.replace("/login");
+        })
+        .finally(() => {
+          setIsProcessingGoogleAuth(false);
         });
     }
-  }, [searchParams, setUser, router]);
+  }, [searchParams, setUser, router, isProcessingGoogleAuth]);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && user.id && !isProcessingGoogleAuth) {
+      console.log("User already logged in, redirecting to home");
+      router.push("/");
+    }
+  }, [user, router, isProcessingGoogleAuth]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -46,25 +98,51 @@ function LoginForm() {
     e.preventDefault();
     try {
       const res = await postRequest("/auth/login", form);
-      setUser(res.user);
-      toast.success("Logged in!", {
-        icon: "🚀",
-        style: {
-          backgroundColor: "#332a38",
-          color: "#fff",
-          fontWeight: "bold",
-          borderRadius: "8px",
-        },
-      });
-      router.push("/");
+      console.log("Login response:", res);
+      
+      if (res.user && res.token) {
+        // Store token
+        localStorage.setItem("token", res.token);
+        
+        // Set user in store
+        setUser(res.user);
+        
+        toast.success("Logged in successfully!", {
+          icon: "🚀",
+          style: {
+            backgroundColor: "#332a38",
+            color: "#fff",
+            fontWeight: "bold",
+            borderRadius: "8px",
+          },
+        });
+        
+        router.push("/");
+      } else {
+        throw new Error("Invalid login response");
+      }
     } catch (err) {
-      toast.error(err.message);
+      console.error("Login error:", err);
+      toast.error(err.message || "Login failed");
     }
   };
 
   const handleGoogleLogin = () => {
+    console.log("Initiating Google login");
     window.location.href = "https://vigyaana-server.onrender.com/api/auth/google";
   };
+
+  // Show loading state during Google OAuth processing
+  if (isProcessingGoogleAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
+          <p className="text-gray-600">Completing Google login...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -158,7 +236,8 @@ function LoginForm() {
           <div className="mt-6">
             <button
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition"
+              disabled={isProcessingGoogleAuth}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               Continue with Google
@@ -176,7 +255,6 @@ function LoginForm() {
             </p>
           </div>
 
-        
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
