@@ -1,25 +1,92 @@
-import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
+// pages/api/auth/[...nextauth].js or app/api/auth/[...nextauth]/route.js
 
-const handler = NextAuth({
+import NextAuth from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
+
+export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
+    })
   ],
   callbacks: {
-    async signIn({ account, profile }) {
-      // We’ll send the user to your backend next step
-      return true;
-    },
-    async redirect({ url, baseUrl }) {
-      return baseUrl + '/login'; // We'll handle redirect logic in the login page
-    },
-    async session({ session }) {
-      return session; // Optional
-    },
-  },
-});
+    async jwt({ token, account, user }) {
+      // Initial sign in
+      if (account && user) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          accessTokenExpires: account.expires_at * 1000,
+        }
+      }
 
-export { handler as GET, handler as POST };
+      // Return previous token if the access token has not expired yet
+      if (Date.now() < token.accessTokenExpires) {
+        return token
+      }
+
+      // Access token has expired, try to update it
+      return await refreshAccessToken(token)
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.accessToken = token.accessToken
+        session.error = token.error
+        session.user.id = token.sub
+      }
+      return session
+    }
+  },
+  pages: {
+    error: '/auth/error', // Error code passed in query string as ?error=
+  },
+  session: {
+    strategy: 'jwt',
+  },
+}
+
+async function refreshAccessToken(token) {
+  try {
+    const url = 'https://oauth2.googleapis.com/token'
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: token.refreshToken,
+      }),
+    })
+
+    const refreshedTokens = await response.json()
+
+    if (!response.ok) {
+      throw refreshedTokens
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+    }
+  } catch (error) {
+    console.error('Error refreshing access token:', error)
+
+    return {
+      ...token,
+      error: 'RefreshAccessTokenError',
+    }
+  }
+}
+
+export default NextAuth(authOptions)
+
+// For App Router (app/api/auth/[...nextauth]/route.js)
+export { authOptions as GET, authOptions as POST }
