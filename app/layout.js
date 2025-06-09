@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from "react";
 import "./globals.css";
-import { SessionProvider } from 'next-auth/react';
+
 import { Toaster } from "react-hot-toast";
 import Navbar from "@/compoenets/Navbar";
 import Script from "next/script"; // ✅ Added missing import
@@ -10,7 +10,7 @@ import  Footer  from "@/compoenets/Footer";
 import { LenisProvider } from "@/compoenets/LenisProvider";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from "@/lib/react-query";
-import AuthInitializer from "@/compoenets/AuthInitializer";
+
 export default function RootLayout({ children }) {
 const checkAuth = useAuthStore((state) => state.checkAuth);
 
@@ -30,9 +30,9 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
        <LenisProvider>
     
        <QueryClientProvider client={queryClient}>
-       <SessionProvider>
+
         {children}
-        </SessionProvider>
+     
         </QueryClientProvider>
        
         </LenisProvider>

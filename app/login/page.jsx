@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
+
 import {
   Eye,
   EyeOff,
@@ -145,7 +145,7 @@ const LoginComponent = () => {
   };
 
   const handleGoogleLogin = () => {
-    signIn('google');
+    
   };
 
   // UI
