@@ -1,24 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useEffect, useRef, useState } from 'react';
 import { getRequest, postRequest } from '@/lib/api';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/lib/store';
-import { Send, Smile, X, Clock, Check, CheckCheck, RefreshCw } from 'lucide-react';
+import { Send, Smile, X, Clock, Check, CheckCheck } from 'lucide-react';
 
 export default function CommunityPage() {
-  const { user, checkAuth } = useAuthStore();
-  const { data: session, status, update } = useSession();
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [authError, setAuthError] = useState(null);
-  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
-  const messagesEndRef = useRef(null);
-  const refreshIntervalRef = useRef(null);
+  const messagesEndRef = useRef();
+  const refreshIntervalRef = useRef();
 
   // Common emojis for the picker
   const emojis = [
@@ -30,305 +25,79 @@ export default function CommunityPage() {
     '💡', '⭐', '🌟', '✨', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇'
   ];
 
-  // Function to refresh session token
-  const refreshSessionToken = useCallback(async () => {
-    if (isRefreshingToken) return false;
-    
-    setIsRefreshingToken(true);
+  const fetchMessages = async () => {
     try {
-      console.log('Refreshing session token...');
-      const updatedSession = await update();
-      
-      if (updatedSession?.accessToken) {
-        console.log('Token refreshed successfully');
-        setAuthError(null);
-        return true;
-      } else {
-        console.log('Token refresh failed - signing out');
-        await signOut({ redirect: false });
-        setAuthError('Session expired. Please log in again.');
-        return false;
-      }
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      await signOut({ redirect: false });
-      setAuthError('Session expired. Please log in again.');
-      return false;
-    } finally {
-      setIsRefreshingToken(false);
-    }
-  }, [update, isRefreshingToken]);
-
-  // Enhanced helper function to get current user info
-  const getCurrentUser = useCallback(() => {
-    // Priority 1: Custom auth user
-    if (user) {
-      return {
-        id: user.id || user._id,
-        name: user.name || user.username || user.email?.split('@')[0] || 'User',
-        email: user.email,
-        isCustomAuth: true
-      };
-    } 
-    // Priority 2: Google OAuth user
-    else if (session?.user) {
-      return {
-        id: session.user.id || session.user.sub || session.user.email,
-        name: session.user.name || session.user.email?.split('@')[0] || 'User',
-        email: session.user.email,
-        isCustomAuth: false
-      };
-    }
-    return null;
-  }, [user, session]);
-
-  // Enhanced fetch messages function with token refresh
-  const fetchMessages = useCallback(async (retryCount = 0) => {
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      console.log('No authenticated user, skipping message fetch');
-      return;
-    }
-
-    try {
-      const options = {
-        withCredentials: true,
-        headers: {}
-      };
-
-      // Add authorization header for Google OAuth
-      if (!currentUser.isCustomAuth && session?.accessToken) {
-        options.headers.Authorization = `Bearer ${session.accessToken}`;
-      }
-
-      const res = await getRequest('/community', options);
-      setMessages(res || []);
+      const res = await getRequest('/community');
+      setMessages(res);
       setIsOnline(true);
-      setAuthError(null);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
-      
-      // Handle authentication errors
-      if ((error.status === 401 || error.message?.includes('token') || error.message?.includes('auth')) && !currentUser.isCustomAuth) {
-        if (retryCount === 0) {
-          console.log('Token expired, attempting refresh...');
-          const refreshed = await refreshSessionToken();
-          if (refreshed) {
-            return fetchMessages(1); // Retry once after token refresh
-          }
-        } else {
-          setAuthError('Authentication expired. Please log in again.');
-        }
-      } else if (error.status === 401) {
-        setAuthError('Authentication error. Please log in again.');
-      } else {
-        setIsOnline(false);
-        if (messages.length === 0 && retryCount === 0) {
-          toast.error('Failed to load messages');
-        }
+      setIsOnline(false);
+      if (messages.length === 0) {
+        toast.error('Failed to load messages');
       }
     }
-  }, [getCurrentUser, session?.accessToken, messages.length, refreshSessionToken]);
+  };
 
-  // Enhanced send message function with token refresh
-  const handleSend = useCallback(async () => {
+  const handleSend = async () => {
     if (!newMessage.trim()) return;
-    
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      toast.error('Authentication error. Please log in again.');
-      return;
-    }
 
     const tempMessage = {
       id: Date.now(),
       content: newMessage,
-      user: { name: currentUser.name },
-      userId: currentUser.id,
+      user: { name: user?.name || 'You' },
+      userId: user?.id,
       createdAt: new Date().toISOString(),
       status: 'sending'
     };
 
+    // Add message optimistically
     setMessages(prev => [tempMessage, ...prev]);
-    const messageContent = newMessage;
     setNewMessage('');
 
-    const sendMessage = async (retryCount = 0) => {
-      try {
-        const options = {
-          withCredentials: true,
-          headers: {}
-        };
+    try {
+      const res = await postRequest('/community', { content: newMessage });
+      // Replace temp message with real one
+      setMessages(prev => 
+        prev.map(msg => msg.id === tempMessage.id ? { ...res, status: 'sent' } : msg)
+      );
+    } catch (err) {
+      // Remove temp message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+      toast.error(err.message || 'Send failed');
+      setNewMessage(tempMessage.content); // Restore message
+    }
+  };
 
-        // Add authorization header for Google OAuth
-        if (!currentUser.isCustomAuth && session?.accessToken) {
-          options.headers.Authorization = `Bearer ${session.accessToken}`;
-        }
-
-        const res = await postRequest('/community', { content: messageContent }, options);
-        
-        setMessages(prev => 
-          prev.map(msg => msg.id === tempMessage.id ? { ...res, status: 'sent' } : msg)
-        );
-        setAuthError(null);
-      } catch (err) {
-        console.error('Failed to send message:', err);
-        
-        // Handle authentication errors
-        if ((err.status === 401 || err.message?.includes('token') || err.message?.includes('auth')) && !currentUser.isCustomAuth) {
-          if (retryCount === 0) {
-            console.log('Token expired during send, attempting refresh...');
-            const refreshed = await refreshSessionToken();
-            if (refreshed) {
-              return sendMessage(1); // Retry once after token refresh
-            }
-          } else {
-            setAuthError('Authentication expired. Please log in again.');
-            toast.error('Authentication error. Please log in again.');
-          }
-        } else if (err.status === 401) {
-          setAuthError('Authentication error. Please log in again.');
-          toast.error('Authentication error. Please log in again.');
-        } else {
-          toast.error(err.message || 'Send failed');
-        }
-        
-        // Remove temp message and restore input
-        setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-        setNewMessage(messageContent);
-      }
-    };
-
-    await sendMessage();
-  }, [newMessage, getCurrentUser, session?.accessToken, refreshSessionToken]);
-
-  const handleEmojiClick = useCallback((emoji) => {
+  const handleEmojiClick = (emoji) => {
     setNewMessage(prev => prev + emoji);
     setShowEmojiPicker(false);
-  }, []);
+  };
 
-  const handleKeyDown = useCallback((e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  }, [handleSend]);
+  };
 
-  // Handle manual refresh
-  const handleRefresh = useCallback(async () => {
-    setIsLoading(true);
-    setAuthError(null);
+  // Auto-refresh every 5 seconds
+  useEffect(() => {
+    fetchMessages();
     
-    const currentUser = getCurrentUser();
-    if (!currentUser) {
-      setAuthError('Please log in to access the community chat');
-      setIsLoading(false);
-      return;
-    }
+    refreshIntervalRef.current = setInterval(() => {
+      fetchMessages();
+    }, 5000);
 
-    // For Google auth, try to refresh token first
-    if (!currentUser.isCustomAuth) {
-      const refreshed = await refreshSessionToken();
-      if (!refreshed) {
-        setIsLoading(false);
-        return;
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
       }
-    }
-
-    await fetchMessages();
-    setIsLoading(false);
-    toast.success('Messages refreshed');
-  }, [getCurrentUser, refreshSessionToken, fetchMessages]);
-
-  // Handle login redirect
-  const handleLogin = useCallback(() => {
-    signIn('google');
+    };
   }, []);
 
-  // Initialize authentication
   useEffect(() => {
-    let isMounted = true;
-
-    const initAuth = async () => {
-      if (status === 'loading') return;
-      
-      setIsLoading(true);
-      setAuthError(null);
-
-      try {
-        // For custom auth users
-        if (user && !session) {
-          await checkAuth();
-        }
-        
-        if (isMounted) {
-          const currentUser = getCurrentUser();
-          if (!currentUser) {
-            setAuthError('Please log in to access the community chat');
-          } else {
-            console.log('Current user:', currentUser);
-          }
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Auth initialization failed:', error);
-          setAuthError('Authentication failed. Please try logging in again.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initAuth();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [session, user, status, checkAuth, getCurrentUser]);
-
-  // Auto-refresh messages with better error handling
-  useEffect(() => {
-    let isMounted = true;
-    
-    const currentUser = getCurrentUser();
-    if (!currentUser || authError || isRefreshingToken) {
-      return;
-    }
-
-    const startPolling = async () => {
-      if (isMounted) {
-        await fetchMessages();
-      }
-      
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-      
-      refreshIntervalRef.current = setInterval(() => {
-        if (isMounted && !isRefreshingToken) {
-          fetchMessages();
-        }
-      }, 5000);
-    };
-
-    startPolling();
-
-    return () => {
-      isMounted = false;
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-        refreshIntervalRef.current = null;
-      }
-    };
-  }, [getCurrentUser, authError, fetchMessages, isRefreshingToken]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Close emoji picker when clicking outside
@@ -339,16 +108,11 @@ export default function CommunityPage() {
       }
     };
 
-    if (showEmojiPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showEmojiPicker]);
 
-  const formatTime = useCallback((dateString) => {
+  const formatTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now - date;
@@ -357,63 +121,14 @@ export default function CommunityPage() {
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
     if (diff < 86400000) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return date.toLocaleDateString();
-  }, []);
+  };
 
-  const getMessageStatus = useCallback((message) => {
-    const currentUser = getCurrentUser();
-    if (!currentUser || message.userId !== currentUser.id) return null;
+  const getMessageStatus = (message) => {
+    if (message.userId !== user?.id) return null;
     if (message.status === 'sending') return <Clock size={12} className="text-gray-400" />;
     if (message.status === 'sent') return <Check size={12} className="text-gray-400" />;
     return <CheckCheck size={12} className="text-blue-400" />;
-  }, [getCurrentUser]);
-
-  // Show loading state
-  if (isLoading || status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
-          {isRefreshingToken && (
-            <p className="text-sm text-gray-500 mt-2">Refreshing authentication...</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const currentUser = getCurrentUser();
-
-  // Show authentication error
-  if (authError || !currentUser) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-6xl mb-4">🔒</div>
-          <p className="text-gray-600 text-lg mb-2">{authError || 'Please log in to access the community chat'}</p>
-          <p className="text-gray-400 text-sm mb-6">You need to be authenticated to view and send messages</p>
-          
-          <div className="space-y-3">
-            <button 
-              onClick={handleLogin}
-              className="w-full px-4 py-2 bg-[#1c4645] text-white rounded-lg hover:bg-[#2a5a58] transition-colors"
-            >
-              Sign in with Google
-            </button>
-            
-            <button 
-              onClick={handleRefresh}
-              disabled={isRefreshingToken}
-              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <RefreshCw size={16} className={isRefreshingToken ? 'animate-spin' : ''} />
-              {isRefreshingToken ? 'Refreshing...' : 'Refresh'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -427,23 +142,10 @@ export default function CommunityPage() {
               <p className="text-sm text-gray-600">
                 {isOnline ? 'Connected' : 'Reconnecting...'}
               </p>
-              <span className="text-xs text-gray-400">
-                • {currentUser.name} ({currentUser.isCustomAuth ? 'Custom' : 'Google'})
-              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-500">
-              {messages.length} message{messages.length !== 1 ? 's' : ''}
-            </div>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshingToken}
-              className="p-2 text-gray-400 hover:text-[#1c4645] transition-colors disabled:opacity-50"
-              title="Refresh messages"
-            >
-              <RefreshCw size={16} className={isRefreshingToken ? 'animate-spin' : ''} />
-            </button>
+          <div className="text-sm text-gray-500">
+            {messages.length} message{messages.length !== 1 ? 's' : ''}
           </div>
         </div>
       </header>
@@ -458,10 +160,9 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {messages.slice().reverse().map((msg, index) => {
-          const isOwn = msg.userId === currentUser.id;
-          const reversedMessages = messages.slice().reverse();
-          const showAvatar = index === 0 || reversedMessages[index - 1]?.userId !== msg.userId;
+        {[...messages].reverse().map((msg, index) => {
+          const isOwn = msg.userId === user?.id;
+          const showAvatar = index === 0 || messages.reverse()[index - 1]?.userId !== msg.userId;
           
           return (
             <div
@@ -471,15 +172,15 @@ export default function CommunityPage() {
               {/* Avatar placeholder */}
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
                 showAvatar ? 'visible' : 'invisible'
-              }`} style={{ backgroundColor: `hsl(${(msg.user?.name || 'User').charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
-                {(msg.user?.name || 'U').charAt(0).toUpperCase()}
+              }`} style={{ backgroundColor: `hsl(${msg.user.name?.charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
+                {msg.user.name?.charAt(0)?.toUpperCase()}
               </div>
 
               {/* Message bubble */}
               <div className={`max-w-xs lg:max-w-md ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
                 {showAvatar && (
                   <p className={`text-xs text-gray-500 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                    {msg.user?.name || 'Unknown User'}
+                    {msg.user.name}
                   </p>
                 )}
                 
@@ -561,7 +262,7 @@ export default function CommunityPage() {
           {/* Send button */}
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim() || !currentUser || isRefreshingToken}
+            disabled={!newMessage.trim()}
             className="bg-[#1c4645] hover:bg-[#2a5a58] disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-3 rounded-2xl transition-colors flex items-center justify-center"
           >
             <Send size={18} />
