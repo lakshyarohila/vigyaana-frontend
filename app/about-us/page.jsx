@@ -1,42 +1,8 @@
 'use client'
 import React from 'react';
 import { BookOpen, Zap, Users, Target, Brain, Rocket, Award, Globe, ArrowRight, CheckCircle, Star, } from 'lucide-react';
+import ContactForm from '@/compoenets/ContactForm';
 
-const ContactForm = () => {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted');
-  };
-
-  return (
-    <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-      <div className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <div className="block text-sm font-medium text-[#1c4645] mb-2">Name</div>
-            <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1c4645] focus:border-transparent" />
-          </div>
-          <div>
-            <div className="block text-sm font-medium text-[#1c4645] mb-2">Email</div>
-            <input type="email" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1c4645] focus:border-transparent" />
-          </div>
-        </div>
-        <div>
-          <div className="block text-sm font-medium text-[#1c4645] mb-2">Subject</div>
-          <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1c4645] focus:border-transparent" />
-        </div>
-        <div>
-          <div className="block text-sm font-medium text-[#1c4645] mb-2">Message</div>
-          <textarea rows="5" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1c4645] focus:border-transparent"></textarea>
-        </div>
-        <button onClick={handleSubmit} className="bg-[#1c4645] text-white px-8 py-3 rounded-lg font-medium hover:bg-opacity-90 transition-all duration-300">
-          Send Message
-        </button>
-      </div>
-    </div>
-  );
-};
 
 const AboutUs = () => {
   return (
@@ -254,7 +220,7 @@ const AboutUs = () => {
           </div>
           
           <div className="max-w-4xl mx-auto">
-            <ContactForm />
+           <ContactForm/>
           </div>
         </div>
       </section>
