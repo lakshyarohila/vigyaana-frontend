@@ -1,6 +1,7 @@
 'use client'
 import { useEffect } from "react";
 import "./globals.css";
+import { SessionProvider } from 'next-auth/react';
 import { Toaster } from "react-hot-toast";
 import Navbar from "@/compoenets/Navbar";
 import Script from "next/script"; // ✅ Added missing import
@@ -29,7 +30,9 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
        <LenisProvider>
     
        <QueryClientProvider client={queryClient}>
+       <SessionProvider>
         {children}
+        </SessionProvider>
         </QueryClientProvider>
        
         </LenisProvider>
