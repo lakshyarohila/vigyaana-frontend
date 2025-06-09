@@ -10,14 +10,27 @@ const handler = NextAuth({
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      // We’ll send the user to your backend next step
       return true;
     },
-    async redirect({ url, baseUrl }) {
-      return baseUrl + '/login'; // We'll handle redirect logic in the login page
+    async jwt({ token, account, profile }) {
+      if (account && profile) {
+        token.email = profile.email;
+        token.name = profile.name;
+      }
+      return token;
     },
-    async session({ session }) {
-      return session; // Optional
+    async session({ session, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          email: token.email,
+          name: token.name,
+        },
+      };
+    },
+    async redirect({ url, baseUrl }) {
+      return baseUrl + '/login';
     },
   },
 });
