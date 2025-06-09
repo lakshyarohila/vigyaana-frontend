@@ -1,19 +1,23 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { getRequest, postRequest } from '@/lib/api';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/lib/store';
 import { Send, Smile, X, Clock, Check, CheckCheck } from 'lucide-react';
 
 export default function CommunityPage() {
-  const { user } = useAuthStore();
+  const { user, checkAuth } = useAuthStore();
+  const { data: session, status } = useSession();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const messagesEndRef = useRef();
-  const refreshIntervalRef = useRef();
+  const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+  const messagesEndRef = useRef(null);
+  const refreshIntervalRef = useRef(null);
 
   // Common emojis for the picker
   const emojis = [
@@ -25,79 +29,208 @@ export default function CommunityPage() {
     '💡', '⭐', '🌟', '✨', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇'
   ];
 
-  const fetchMessages = async () => {
+  // Memoized helper function to get current user info
+  const getCurrentUser = useCallback(() => {
+    if (user) {
+      return {
+        id: user.id || user._id,
+        name: user.name || user.username || user.email?.split('@')[0] || 'User',
+        email: user.email,
+        isCustomAuth: true
+      };
+    } else if (session?.user) {
+      return {
+        id: session.user.id || session.user.sub || session.user.email,
+        name: session.user.name || session.user.email?.split('@')[0] || 'User',
+        email: session.user.email,
+        isCustomAuth: false
+      };
+    }
+    return null;
+  }, [user, session]);
+
+  // Memoized fetch messages function
+  const fetchMessages = useCallback(async () => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      console.log('No authenticated user, skipping message fetch');
+      return;
+    }
+
     try {
-      const res = await getRequest('/community');
-      setMessages(res);
+      const options = {
+        withCredentials: true,
+        headers: {}
+      };
+
+      if (session?.accessToken) {
+        options.headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      const res = await getRequest('/community', options);
+      setMessages(res || []);
       setIsOnline(true);
+      setAuthError(null);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
-      setIsOnline(false);
-      if (messages.length === 0) {
-        toast.error('Failed to load messages');
+      
+      if (error.status === 401 || error.message?.includes('token') || error.message?.includes('auth')) {
+        setAuthError('Authentication expired. Please log in again.');
+      } else {
+        setIsOnline(false);
+        if (messages.length === 0) {
+          toast.error('Failed to load messages');
+        }
       }
     }
-  };
+  }, [getCurrentUser, session?.accessToken, messages.length]);
 
-  const handleSend = async () => {
+  // Handle send message
+  const handleSend = useCallback(async () => {
     if (!newMessage.trim()) return;
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      toast.error('Authentication error. Please log in again.');
+      return;
+    }
 
     const tempMessage = {
       id: Date.now(),
       content: newMessage,
-      user: { name: user?.name || 'You' },
-      userId: user?.id,
+      user: { name: currentUser.name },
+      userId: currentUser.id,
       createdAt: new Date().toISOString(),
       status: 'sending'
     };
 
-    // Add message optimistically
     setMessages(prev => [tempMessage, ...prev]);
     setNewMessage('');
 
     try {
-      const res = await postRequest('/community', { content: newMessage });
-      // Replace temp message with real one
+      const options = {
+        withCredentials: true,
+        headers: {}
+      };
+
+      if (session?.accessToken) {
+        options.headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      const res = await postRequest('/community', { content: newMessage }, options);
+      
       setMessages(prev => 
         prev.map(msg => msg.id === tempMessage.id ? { ...res, status: 'sent' } : msg)
       );
+      setAuthError(null);
     } catch (err) {
-      // Remove temp message on error
+      console.error('Failed to send message:', err);
+      
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('auth')) {
+        setAuthError('Authentication expired. Please log in again.');
+        toast.error('Authentication error. Please log in again.');
+      } else {
+        toast.error(err.message || 'Send failed');
+      }
+      
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-      toast.error(err.message || 'Send failed');
-      setNewMessage(tempMessage.content); // Restore message
+      setNewMessage(tempMessage.content);
     }
-  };
+  }, [newMessage, getCurrentUser, session?.accessToken]);
 
-  const handleEmojiClick = (emoji) => {
+  const handleEmojiClick = useCallback((emoji) => {
     setNewMessage(prev => prev + emoji);
     setShowEmojiPicker(false);
-  };
+  }, []);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }, [handleSend]);
 
-  // Auto-refresh every 5 seconds
+  // Initialize authentication
   useEffect(() => {
-    fetchMessages();
-    
-    refreshIntervalRef.current = setInterval(() => {
-      fetchMessages();
-    }, 5000);
+    let isMounted = true;
+
+    const initAuth = async () => {
+      if (status === 'loading') return;
+      
+      setIsLoading(true);
+      setAuthError(null);
+
+      try {
+        if (session && !user) {
+          await checkAuth();
+        }
+        
+        if (isMounted) {
+          const currentUser = getCurrentUser();
+          if (!currentUser) {
+            setAuthError('Please log in to access the community chat');
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Auth initialization failed:', error);
+          setAuthError('Authentication failed. Please try logging in again.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initAuth();
 
     return () => {
+      isMounted = false;
+    };
+  }, [session, user, status, checkAuth, getCurrentUser]);
+
+  // Auto-refresh messages
+  useEffect(() => {
+    let isMounted = true;
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser || authError) {
+      return;
+    }
+
+    const startPolling = async () => {
+      if (isMounted) {
+        await fetchMessages();
+      }
+      
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
+      
+      refreshIntervalRef.current = setInterval(() => {
+        if (isMounted) {
+          fetchMessages();
+        }
+      }, 5000);
     };
-  }, []);
 
+    startPolling();
+
+    return () => {
+      isMounted = false;
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+  }, [getCurrentUser, authError, fetchMessages]);
+
+  // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   // Close emoji picker when clicking outside
@@ -108,11 +241,16 @@ export default function CommunityPage() {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showEmojiPicker]);
 
-  const formatTime = (dateString) => {
+  const formatTime = useCallback((dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now - date;
@@ -121,14 +259,49 @@ export default function CommunityPage() {
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
     if (diff < 86400000) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return date.toLocaleDateString();
-  };
+  }, []);
 
-  const getMessageStatus = (message) => {
-    if (message.userId !== user?.id) return null;
+  const getMessageStatus = useCallback((message) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser || message.userId !== currentUser.id) return null;
     if (message.status === 'sending') return <Clock size={12} className="text-gray-400" />;
     if (message.status === 'sent') return <Check size={12} className="text-gray-400" />;
     return <CheckCheck size={12} className="text-blue-400" />;
-  };
+  }, [getCurrentUser]);
+
+  // Show loading state
+  if (isLoading || status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading chat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentUser = getCurrentUser();
+
+  // Show authentication error
+  if (authError || !currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <p className="text-gray-600 text-lg mb-2">{authError || 'Please log in to access the community chat'}</p>
+          <p className="text-gray-400 text-sm mb-4">You need to be authenticated to view and send messages</p>
+          
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-[#1c4645] text-white rounded-lg hover:bg-[#2a5a58] transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -142,6 +315,9 @@ export default function CommunityPage() {
               <p className="text-sm text-gray-600">
                 {isOnline ? 'Connected' : 'Reconnecting...'}
               </p>
+              <span className="text-xs text-gray-400">
+                • {currentUser.name} ({currentUser.isCustomAuth ? 'Custom' : 'Google'})
+              </span>
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -160,9 +336,10 @@ export default function CommunityPage() {
           </div>
         )}
 
-        {[...messages].reverse().map((msg, index) => {
-          const isOwn = msg.userId === user?.id;
-          const showAvatar = index === 0 || messages.reverse()[index - 1]?.userId !== msg.userId;
+        {messages.slice().reverse().map((msg, index) => {
+          const isOwn = msg.userId === currentUser.id;
+          const reversedMessages = messages.slice().reverse();
+          const showAvatar = index === 0 || reversedMessages[index - 1]?.userId !== msg.userId;
           
           return (
             <div
@@ -172,15 +349,15 @@ export default function CommunityPage() {
               {/* Avatar placeholder */}
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
                 showAvatar ? 'visible' : 'invisible'
-              }`} style={{ backgroundColor: `hsl(${msg.user.name?.charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
-                {msg.user.name?.charAt(0)?.toUpperCase()}
+              }`} style={{ backgroundColor: `hsl(${(msg.user?.name || 'User').charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
+                {(msg.user?.name || 'U').charAt(0).toUpperCase()}
               </div>
 
               {/* Message bubble */}
               <div className={`max-w-xs lg:max-w-md ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
                 {showAvatar && (
                   <p className={`text-xs text-gray-500 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                    {msg.user.name}
+                    {msg.user?.name || 'Unknown User'}
                   </p>
                 )}
                 
@@ -262,7 +439,7 @@ export default function CommunityPage() {
           {/* Send button */}
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !currentUser}
             className="bg-[#1c4645] hover:bg-[#2a5a58] disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-3 rounded-2xl transition-colors flex items-center justify-center"
           >
             <Send size={18} />
