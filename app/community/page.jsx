@@ -12,8 +12,17 @@ export default function CommunityPage() {
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef();
   const refreshIntervalRef = useRef();
+
+  // Debug: Log user data to understand the structure
+  useEffect(() => {
+    console.log('Current user data:', user);
+    console.log('User ID:', user?.id);
+    console.log('User Name:', user?.name);
+    console.log('User Email:', user?.email);
+  }, [user]);
 
   // Common emojis for the picker
   const emojis = [
@@ -25,28 +34,61 @@ export default function CommunityPage() {
     '💡', '⭐', '🌟', '✨', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇'
   ];
 
+  // Helper function to get user ID from different auth providers
+  const getUserId = () => {
+    return user?.id || user?.sub || user?.userId || user?._id;
+  };
+
+  // Helper function to get user name from different auth providers
+  const getUserName = () => {
+    return user?.name || user?.displayName || user?.username || user?.email?.split('@')[0] || 'Anonymous';
+  };
+
   const fetchMessages = async () => {
+    if (!user) {
+      console.log('No user found, skipping message fetch');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      console.log('Fetching messages for user:', getUserId());
       const res = await getRequest('/community');
+      console.log('Messages fetched successfully:', res);
       setMessages(res);
       setIsOnline(true);
+      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
       setIsOnline(false);
+      setIsLoading(false);
       if (messages.length === 0) {
-        toast.error('Failed to load messages');
+        toast.error('Failed to load messages: ' + (error.message || 'Unknown error'));
       }
     }
   };
 
   const handleSend = async () => {
     if (!newMessage.trim()) return;
+    
+    const userId = getUserId();
+    const userName = getUserName();
+    
+    if (!userId) {
+      toast.error('Authentication error. Please log in again.');
+      return;
+    }
 
     const tempMessage = {
       id: Date.now(),
       content: newMessage,
-      user: { name: user?.name || 'You' },
-      userId: user?.id,
+      user: { name: userName },
+      userId: userId,
       createdAt: new Date().toISOString(),
       status: 'sending'
     };
@@ -56,12 +98,15 @@ export default function CommunityPage() {
     setNewMessage('');
 
     try {
+      console.log('Sending message with user ID:', userId);
       const res = await postRequest('/community', { content: newMessage });
+      console.log('Message sent successfully:', res);
       // Replace temp message with real one
       setMessages(prev => 
         prev.map(msg => msg.id === tempMessage.id ? { ...res, status: 'sent' } : msg)
       );
     } catch (err) {
+      console.error('Failed to send message:', err);
       // Remove temp message on error
       setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
       toast.error(err.message || 'Send failed');
@@ -81,8 +126,13 @@ export default function CommunityPage() {
     }
   };
 
-  // Auto-refresh every 5 seconds
+  // Auto-refresh every 5 seconds, but only if user is authenticated
   useEffect(() => {
+    if (!user) {
+      console.log('No user found, not starting auto-refresh');
+      return;
+    }
+
     fetchMessages();
     
     refreshIntervalRef.current = setInterval(() => {
@@ -94,7 +144,7 @@ export default function CommunityPage() {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, []);
+  }, [user]); // Added user as dependency
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -124,11 +174,37 @@ export default function CommunityPage() {
   };
 
   const getMessageStatus = (message) => {
-    if (message.userId !== user?.id) return null;
+    const currentUserId = getUserId();
+    if (message.userId !== currentUserId) return null;
     if (message.status === 'sending') return <Clock size={12} className="text-gray-400" />;
     if (message.status === 'sent') return <Check size={12} className="text-gray-400" />;
     return <CheckCheck size={12} className="text-blue-400" />;
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1c4645] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading chat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔒</div>
+          <p className="text-gray-600 text-lg mb-2">Please log in to access the community chat</p>
+          <p className="text-gray-400 text-sm">You need to be authenticated to view and send messages</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -142,6 +218,9 @@ export default function CommunityPage() {
               <p className="text-sm text-gray-600">
                 {isOnline ? 'Connected' : 'Reconnecting...'}
               </p>
+              <span className="text-xs text-gray-400">
+                • Logged in as {getUserName()}
+              </span>
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -161,7 +240,8 @@ export default function CommunityPage() {
         )}
 
         {[...messages].reverse().map((msg, index) => {
-          const isOwn = msg.userId === user?.id;
+          const currentUserId = getUserId();
+          const isOwn = msg.userId === currentUserId;
           const showAvatar = index === 0 || messages.reverse()[index - 1]?.userId !== msg.userId;
           
           return (
@@ -172,15 +252,15 @@ export default function CommunityPage() {
               {/* Avatar placeholder */}
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
                 showAvatar ? 'visible' : 'invisible'
-              }`} style={{ backgroundColor: `hsl(${msg.user.name?.charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
-                {msg.user.name?.charAt(0)?.toUpperCase()}
+              }`} style={{ backgroundColor: `hsl(${(msg.user.name || 'User')?.charCodeAt(0) * 10 % 360}, 70%, 50%)` }}>
+                {(msg.user.name || 'U')?.charAt(0)?.toUpperCase()}
               </div>
 
               {/* Message bubble */}
               <div className={`max-w-xs lg:max-w-md ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
                 {showAvatar && (
                   <p className={`text-xs text-gray-500 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                    {msg.user.name}
+                    {msg.user.name || 'Unknown User'}
                   </p>
                 )}
                 
@@ -262,7 +342,7 @@ export default function CommunityPage() {
           {/* Send button */}
           <button
             onClick={handleSend}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !getUserId()}
             className="bg-[#1c4645] hover:bg-[#2a5a58] disabled:bg-gray-300 disabled:cursor-not-allowed text-white p-3 rounded-2xl transition-colors flex items-center justify-center"
           >
             <Send size={18} />
