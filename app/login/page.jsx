@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import {
   Eye,
   EyeOff,
@@ -22,7 +22,7 @@ const LoginComponent = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const { setUser, user } = useAuthStore();
+  const { setUser, user, logout: customLogout } = useAuthStore();
 
   // ✅ Handle redirect after user is already logged in
   useEffect(() => {
@@ -31,7 +31,7 @@ const LoginComponent = () => {
 
   // ✅ Handle redirect after Google login (session exists)
   useEffect(() => {
-    if (session?.user?.email) {
+    if (session?.user?.email && !user) { // Only proceed if user is not already set
       // Call your backend to store user or fetch
       fetch('https://vigyaana-server.onrender.com/api/auth/google-login', {
         method: 'POST',
@@ -57,7 +57,7 @@ const LoginComponent = () => {
           });
         });
     }
-  }, [session, setUser, router]);
+  }, [session, setUser, router, user]); // Added user to dependencies
 
   useEffect(() => {
     if (message.text) {
@@ -65,6 +65,30 @@ const LoginComponent = () => {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Add this function to your auth store or create a custom logout handler
+  const handleLogout = async () => {
+    try {
+      // If there's a NextAuth session, sign out from NextAuth
+      if (session) {
+        await signOut({ redirect: false });
+      }
+      
+      // Call your custom logout API
+      await fetch('https://vigyaana-server.onrender.com/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      // Clear your custom auth state
+      customLogout();
+      
+      // Redirect to login
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
