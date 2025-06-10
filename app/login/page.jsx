@@ -228,8 +228,8 @@ const LoginComponent = () => {
 
             {/* ✅ Fixed Google Login with proper error handling */}
             <div className="w-full flex justify-center">
-              {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
-                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+             
+              
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
@@ -240,12 +240,8 @@ const LoginComponent = () => {
                     shape="rectangular"
                     logo_alignment="left"
                   />
-                </GoogleOAuthProvider>
-              ) : (
-                <div className="w-full p-3 text-center text-red-600 bg-red-50 rounded-lg border border-red-200">
-                  Google OAuth not configured. Please check your environment variables.
-                </div>
-              )}
+               
+              
             </div>
           </form>
 
