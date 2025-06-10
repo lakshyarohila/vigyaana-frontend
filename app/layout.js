@@ -1,7 +1,7 @@
 'use client'
 import { useEffect } from "react";
 import "./globals.css";
-
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from "react-hot-toast";
 import Navbar from "@/compoenets/Navbar";
 import Script from "next/script"; // ✅ Added missing import
@@ -18,6 +18,7 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
     checkAuth(); // 🧠 Load user from cookie on every refresh
   }, []);
   return (
+   <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
     <html lang="en" suppressHydrationWarning>
     <head>
         <title>Vigyaana</title>
@@ -41,5 +42,6 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
         <Footer/>
       </body>
     </html>
+    </GoogleOAuthProvider>
   );
 }
