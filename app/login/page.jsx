@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import useAuthStore from '@/lib/store';
 import toast from 'react-hot-toast';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
-import jwt_decode from 'jwt-decode';
+// ✅ Fixed import - use named import or default import based on version
+import { jwtDecode } from 'jwt-decode'; // For jwt-decode v4+
+// OR use: import jwt_decode from 'jwt-decode'; // For jwt-decode v3
 
 const LoginComponent = () => {
   const router = useRouter();
@@ -81,12 +83,19 @@ const LoginComponent = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const decoded = jwt_decode(credentialResponse.credential);
+      // ✅ Fixed jwt decode usage
+      const decoded = jwtDecode(credentialResponse.credential); // For jwt-decode v4+
+      // OR use: const decoded = jwt_decode(credentialResponse.credential); // For jwt-decode v3
+      
       const res = await fetch('https://vigyaana-server.onrender.com/api/auth/google-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: decoded.email, name: decoded.name }),
+        body: JSON.stringify({ 
+          email: decoded.email, 
+          name: decoded.name,
+          picture: decoded.picture // Optional: include profile picture
+        }),
       });
 
       const data = await res.json();
@@ -102,6 +111,11 @@ const LoginComponent = () => {
       console.error('Google login error:', err);
       toast.error('Google login failed');
     }
+  };
+
+  const handleGoogleError = () => {
+    console.error('Google login failed');
+    toast.error('Google login failed');
   };
 
   return (
@@ -181,14 +195,20 @@ const LoginComponent = () => {
               </div>
             </div>
 
-            {/* 🟢 Google Login Button */}
-            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => toast.error('Google login failed')}
-                useOneTap
-              />
-            </GoogleOAuthProvider>
+            {/* ✅ Fixed Google Login with proper error handling */}
+            <div className="w-full">
+              <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap={false} // ✅ Disable one-tap to avoid COOP issues
+                  width="100%"
+                  size="large"
+                  theme="outline"
+                  text="signin_with"
+                />
+              </GoogleOAuthProvider>
+            </div>
           </form>
 
           <div className="mt-6 text-center space-y-2">
