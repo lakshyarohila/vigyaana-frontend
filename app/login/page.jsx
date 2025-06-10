@@ -18,6 +18,14 @@ const LoginComponent = () => {
 
   const { setUser, user } = useAuthStore();
 
+  // Debug: Check if Google Client ID is loaded
+  useEffect(() => {
+    console.log('Google Client ID:', process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+    if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+      console.error('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not defined');
+    }
+  }, []);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) router.push('/dashboard');
@@ -82,34 +90,57 @@ const LoginComponent = () => {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
     try {
+      console.log('Google credential response:', credentialResponse);
+      
       // ✅ Fixed jwt decode usage
-      const decoded = jwtDecode(credentialResponse.credential); // For jwt-decode v4+
-      // OR use: const decoded = jwt_decode(credentialResponse.credential); // For jwt-decode v3
+      const decoded = jwtDecode(credentialResponse.credential);
+      console.log('Decoded token:', decoded);
+      
+      const payload = {
+        email: decoded.email,
+        name: decoded.name || decoded.given_name + ' ' + decoded.family_name,
+        picture: decoded.picture,
+        sub: decoded.sub, // Google user ID
+        email_verified: decoded.email_verified
+      };
+      
+      console.log('Sending payload:', payload);
       
       const res = await fetch('https://vigyaana-server.onrender.com/api/auth/google-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         credentials: 'include',
-        body: JSON.stringify({ 
-          email: decoded.email, 
-          name: decoded.name,
-          picture: decoded.picture // Optional: include profile picture
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      console.log('Response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Server error response:', errorText);
+        throw new Error(`Server error: ${res.status} - ${errorText}`);
+      }
 
-      if (res.ok) {
+      const data = await res.json();
+      console.log('Server response:', data);
+
+      if (data.success !== false) {
         setUser(data.user);
         toast.success('Google login successful');
-        router.push('/dashboard');
+        setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         toast.error(data.message || 'Google login failed');
       }
     } catch (err) {
       console.error('Google login error:', err);
-      toast.error('Google login failed');
+      toast.error(`Google login failed: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,18 +227,25 @@ const LoginComponent = () => {
             </div>
 
             {/* ✅ Fixed Google Login with proper error handling */}
-            <div className="w-full">
-              <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  useOneTap={false} // ✅ Disable one-tap to avoid COOP issues
-                  width="100%"
-                  size="large"
-                  theme="outline"
-                  text="signin_with"
-                />
-              </GoogleOAuthProvider>
+            <div className="w-full flex justify-center">
+              {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+                <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    useOneTap={false}
+                    size="large"
+                    theme="outline"
+                    text="signin_with"
+                    shape="rectangular"
+                    logo_alignment="left"
+                  />
+                </GoogleOAuthProvider>
+              ) : (
+                <div className="w-full p-3 text-center text-red-600 bg-red-50 rounded-lg border border-red-200">
+                  Google OAuth not configured. Please check your environment variables.
+                </div>
+              )}
             </div>
           </form>
 
