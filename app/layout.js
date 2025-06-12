@@ -40,6 +40,7 @@ const checkAuth = useAuthStore((state) => state.checkAuth);
         {/* ✅ Razorpay Script - Loads globally once */}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
         <Footer/>
+        
       </body>
     </html>
     </GoogleOAuthProvider>

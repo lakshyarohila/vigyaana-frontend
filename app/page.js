@@ -17,6 +17,7 @@ import {
   Award,
   CheckCircle,
 } from 'lucide-react';
+import ChatBot from '@/compoenets/ChatBot';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -242,6 +243,7 @@ export default function HomePage() {
           </div>
         </motion.div>
       </section>
+      <ChatBot/>
     </div>
   );
 }
