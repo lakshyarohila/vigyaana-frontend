@@ -5,9 +5,6 @@ import { useRouter } from 'next/navigation';
 import useAuthStore from '@/lib/store';
 import toast from 'react-hot-toast';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
-// ✅ Fixed import - use named import or default import based on version
-import { jwtDecode } from 'jwt-decode'; // For jwt-decode v4+
-// OR use: import jwt_decode from 'jwt-decode'; // For jwt-decode v3
 
 const LoginComponent = () => {
   const router = useRouter();
@@ -89,21 +86,15 @@ const LoginComponent = () => {
     }
   };
 
+  // ✅ FIXED: Send the raw credential token to match backend expectations
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
       console.log('Google credential response:', credentialResponse);
       
-      // ✅ Fixed jwt decode usage
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log('Decoded token:', decoded);
-      
+      // ✅ Send the raw credential token (not decoded data)
       const payload = {
-        email: decoded.email,
-        name: decoded.name || decoded.given_name + ' ' + decoded.family_name,
-        picture: decoded.picture,
-        sub: decoded.sub, // Google user ID
-        email_verified: decoded.email_verified
+        credential: credentialResponse.credential // This is what backend expects
       };
       
       console.log('Sending payload:', payload);
@@ -129,9 +120,9 @@ const LoginComponent = () => {
       const data = await res.json();
       console.log('Server response:', data);
 
-      if (data.success !== false) {
+      if (data.user) {
         setUser(data.user);
-        toast.success('Google login successful');
+        toast.success(data.message || 'Google login successful');
         setTimeout(() => router.push('/dashboard'), 1000);
       } else {
         toast.error(data.message || 'Google login failed');
@@ -226,22 +217,17 @@ const LoginComponent = () => {
               </div>
             </div>
 
-            {/* ✅ Fixed Google Login with proper error handling */}
             <div className="w-full flex justify-center">
-             
-              
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    useOneTap={false}
-                    size="large"
-                    theme="outline"
-                    text="signin_with"
-                    shape="rectangular"
-                    logo_alignment="left"
-                  />
-               
-              
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap={false}
+                size="large"
+                theme="outline"
+                text="signin_with"
+                shape="rectangular"
+                logo_alignment="left"
+              />
             </div>
           </form>
 
