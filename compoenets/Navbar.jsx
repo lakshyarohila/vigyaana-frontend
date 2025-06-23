@@ -43,7 +43,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[#0f302f] text-white shadow-lg relative fixed top-0 left-0 right-0 z-50">
+    <>
+      <nav className="bg-[#0f302f] text-white shadow-lg fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -274,5 +275,8 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+    {/* Spacer div to prevent content from hiding behind fixed navbar */}
+    <div className="h-16"></div>
+    </>
   );
 }
