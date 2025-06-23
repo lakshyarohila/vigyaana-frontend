@@ -1,21 +1,40 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useMutation } from '@tanstack/react-query';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
-import { Upload, Video, FileText } from 'lucide-react';
+import { Upload, Video, FileText, CalendarClock, Plus } from 'lucide-react';
 
 export default function AddSectionPage() {
   const { id: courseId } = useParams();
   const router = useRouter();
 
+  const [course, setCourse] = useState(null);
   const [title, setTitle] = useState('');
   const [video, setVideo] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState('');
 
-  const mutation = useMutation({
+  // 🧠 Fetch course details to know type
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const res = await fetch(`https://vigyaana-server.onrender.com/api/courses/${courseId}`, {
+          credentials: 'include',
+        });
+        const data = await res.json();
+        setCourse(data);
+      } catch (err) {
+        toast.error('Failed to load course');
+      }
+    };
+
+    fetchCourse();
+  }, [courseId]);
+
+  const uploadRecordedMutation = useMutation({
     mutationFn: async () => {
       const data = new FormData();
       data.append('title', title);
@@ -39,9 +58,30 @@ export default function AddSectionPage() {
       toast.success('Section uploaded');
       router.push('/instructor');
     },
-    onError: (err) => {
-      toast.error(err.message || 'Upload failed');
+    onError: (err) => toast.error(err.message || 'Upload failed'),
+  });
+
+  const createLiveSessionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('https://vigyaana-server.onrender.com/api/livesessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ courseId, topic: title, scheduledAt }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to create live session');
+      }
+
+      return res.json();
     },
+    onSuccess: () => {
+      toast.success('Live session scheduled');
+      router.push('/instructor');
+    },
+    onError: (err) => toast.error(err.message || 'Failed to create session'),
   });
 
   const handleDrop = (e) => {
@@ -64,11 +104,16 @@ export default function AddSectionPage() {
   };
 
   const handleSubmit = () => {
-    if (!title || !video) {
-      return toast.error('Please provide both title and video');
+    if (course?.type === 'RECORDED') {
+      if (!title || !video) return toast.error('Please provide both title and video');
+      uploadRecordedMutation.mutate();
+    } else if (course?.type === 'LIVE') {
+      if (!title || !scheduledAt) return toast.error('Please provide topic and date/time');
+      createLiveSessionMutation.mutate();
     }
-    mutation.mutate();
   };
+
+  if (!course) return null;
 
   return (
     <ProtectedRoute allowedRoles={['INSTRUCTOR']}>
@@ -76,72 +121,92 @@ export default function AddSectionPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1c4645] rounded-full mb-4">
-              <Video className="w-8 h-8 text-white" />
+              {course.type === 'LIVE' ? <CalendarClock className="w-8 h-8 text-white" /> : <Video className="w-8 h-8 text-white" />}
             </div>
-            <h1 className="text-3xl font-bold text-[#1c4645] mb-2">Add New Section</h1>
-            <p className="text-gray-600">Upload a new video section to your course</p>
+            <h1 className="text-3xl font-bold text-[#1c4645] mb-2">
+              {course.type === 'LIVE' ? 'Add Live Session' : 'Add New Section'}
+            </h1>
+            <p className="text-gray-600">
+              {course.type === 'LIVE'
+                ? 'Schedule a live session for this course'
+                : 'Upload a new video section to your course'}
+            </p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="px-8 py-6 bg-[#1c4645]">
               <h2 className="text-xl font-semibold text-white flex items-center">
                 <FileText className="w-5 h-5 mr-2" />
-                Section Details
+                {course.type === 'LIVE' ? 'Live Session Details' : 'Section Details'}
               </h2>
             </div>
 
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#1c4645]">Section Title</label>
+                <label className="block text-sm font-medium text-[#1c4645]">
+                  {course.type === 'LIVE' ? 'Session Topic' : 'Section Title'}
+                </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter section title..."
+                  placeholder={course.type === 'LIVE' ? 'Live class topic...' : 'Video section title...'}
                   className="w-full px-4 py-3 border-2 text-black border-gray-200 rounded-lg focus:border-[#1c4645]"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#1c4645]">Video File</label>
-                <div
-                  className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
-                    isDragOver
-                      ? 'border-[#1c4645] bg-[#1c4645]/5'
-                      : video
-                      ? 'border-[#1c4645] bg-[#1c4645]/5'
-                      : 'border-gray-300 hover:border-[#1c4645]'
-                  }`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                >
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-[#1c4645]/10 rounded-full mb-4">
-                      <Upload className="w-6 h-6 text-[#1c4645]" />
-                    </div>
-
-                    {video ? (
-                      <div>
-                        <p className="text-[#1c4645] font-medium mb-1">{video.name}</p>
-                        <p className="text-sm text-gray-500">{(video.size / 1024 / 1024).toFixed(2)} MB</p>
+              {course.type === 'LIVE' ? (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[#1c4645]">Scheduled Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="w-full px-4 py-3 border-2 text-black border-gray-200 rounded-lg focus:border-[#1c4645]"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[#1c4645]">Video File</label>
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-8 transition-all duration-200 ${
+                      isDragOver
+                        ? 'border-[#1c4645] bg-[#1c4645]/5'
+                        : video
+                        ? 'border-[#1c4645] bg-[#1c4645]/5'
+                        : 'border-gray-300 hover:border-[#1c4645]'
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                  >
+                    <div className="text-center">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-[#1c4645]/10 rounded-full mb-4">
+                        <Upload className="w-6 h-6 text-[#1c4645]" />
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-[#1c4645] font-medium mb-1">Drop your video here or click to browse</p>
-                        <p className="text-sm text-gray-500">Supports MP4, MOV, AVI and more</p>
-                      </>
-                    )}
 
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setVideo(e.target.files[0])}
-                      className="absolute inset-0 w-full text-black h-full opacity-0 cursor-pointer"
-                    />
+                      {video ? (
+                        <div>
+                          <p className="text-[#1c4645] font-medium mb-1">{video.name}</p>
+                          <p className="text-sm text-gray-500">{(video.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[#1c4645] font-medium mb-1">Drop your video here or click to browse</p>
+                          <p className="text-sm text-gray-500">Supports MP4, MOV, AVI and more</p>
+                        </>
+                      )}
+
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => setVideo(e.target.files[0])}
+                        className="absolute inset-0 w-full text-black h-full opacity-0 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
                 <button
@@ -154,10 +219,14 @@ export default function AddSectionPage() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  disabled={mutation.isLoading}
+                  disabled={uploadRecordedMutation.isLoading || createLiveSessionMutation.isLoading}
                   className="px-8 py-3 bg-[#1c4645] text-white rounded-lg hover:bg-[#2a5a58]"
                 >
-                  {mutation.isLoading ? 'Uploading...' : 'Upload Section'}
+                  {uploadRecordedMutation.isLoading || createLiveSessionMutation.isLoading
+                    ? 'Processing...'
+                    : course.type === 'LIVE'
+                    ? 'Schedule Session'
+                    : 'Upload Section'}
                 </button>
               </div>
             </div>
