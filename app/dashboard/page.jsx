@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
+  MessageSquare,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -178,11 +179,23 @@ export default function DashboardPage() {
                     {/* Continue Button */}
                     <Link
                       href={`/dashboard/course/${course.id}`}
-                      className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium"
+                      className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium mb-2"
                     >
                       <Play className="h-4 w-4" />
                       {completed ? 'Review Course' : 'Continue Learning'}
                     </Link>
+
+                    {/* ✅ Join WhatsApp Group button for LIVE courses */}
+                    {course.type === 'LIVE' && course.whatsappGroupLink && (
+                      <a
+                        href={course.whatsappGroupLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Join WhatsApp Group
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}

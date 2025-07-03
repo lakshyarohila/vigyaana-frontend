@@ -20,6 +20,7 @@ export default function CreateCoursePage() {
     price: '',
     thumbnail: null,
     type: 'RECORDED', // ✅ default value
+    whatsappGroupLink: '', // ✅ new field
   });
 
   const handleChange = (e) => {
@@ -40,6 +41,9 @@ export default function CreateCoursePage() {
     data.append('price', form.price);
     data.append('thumbnail', form.thumbnail);
     data.append('type', form.type); // ✅ added type
+    if (form.type === 'LIVE' && form.whatsappGroupLink) {
+      data.append('whatsappGroupLink', form.whatsappGroupLink); // ✅ add only for LIVE
+    }
 
     try {
       const response = await fetch('https://vigyaana-server.onrender.com/api/courses', {
@@ -112,7 +116,7 @@ export default function CreateCoursePage() {
                 />
               </div>
 
-              {/* ✅ Course Type */}
+              {/* Course Type */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-[#1c4645]">Course Type</label>
                 <select
@@ -126,6 +130,22 @@ export default function CreateCoursePage() {
                   <option value="LIVE">Live</option>
                 </select>
               </div>
+
+              {/* ✅ WhatsApp Group Link for LIVE */}
+              {form.type === 'LIVE' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-[#1c4645]">WhatsApp Group Link</label>
+                  <input
+                    name="whatsappGroupLink"
+                    type="url"
+                    value={form.whatsappGroupLink}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 text-black border-2 rounded-md focus:outline-none focus:ring-2"
+                    placeholder="https://chat.whatsapp.com/..."
+                    required
+                  />
+                </div>
+              )}
 
               {/* Thumbnail */}
               <div>
