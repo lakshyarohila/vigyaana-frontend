@@ -127,84 +127,88 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map(({ course, progress, completed }) => (
-                <div
-                  key={course.id}
-                  className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
-                >
-                  <div className="relative">
-                    <img
-                      src={course.thumbnailUrl}
-                      alt={course.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    {completed && (
-                      <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
-                        <CheckCircle className="h-5 w-5" />
-                      </div>
-                    )}
-                    {progress > 0 && !completed && (
-                      <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {progress}%
-                      </div>
-                    )}
-                  </div>
+              {courses.map(({ course, progress, completed }) => {
+                const courseType = course.type;
+                const isLive = courseType === 'LIVE';
+                const courseUrl = isLive
+                  ? `/dashboard/live-course/${course.id}`
+                  : `/dashboard/course/${course.id}`;
 
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-[#1c4645] mb-3">
-                      {course.title}
-                    </h3>
-
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          Progress
-                        </span>
-                        <span className="text-sm font-bold text-[#1c4645]">
-                          {progress}% completed
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
+                return (
+                  <div
+                    key={course.id}
+                    className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
+                  >
+                    <div className="relative">
+                      <img
+                        src={course.thumbnailUrl}
+                        alt={course.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      {completed && (
+                        <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
+                          <CheckCircle className="h-5 w-5" />
+                        </div>
+                      )}
+                      {progress > 0 && !completed && (
+                        <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {progress}%
+                        </div>
+                      )}
                     </div>
 
-                    {/* ✅ Corrected Continue Button */}
-                    <Link
-                      href={
-                        course.type === 'LIVE'
-                          ? `/dashboard/live-course/${course.id}`
-                          : `/dashboard/course/${course.id}`
-                      }
-                      className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium mb-2"
-                    >
-                      <Play className="h-4 w-4" />
-                      {completed
-                        ? 'Review Course'
-                        : course.type === 'LIVE'
-                        ? 'View Live Details'
-                        : 'Continue Learning'}
-                    </Link>
+                    <div className="p-6">
+                      <h3 className="text-xl font-bold text-[#1c4645] mb-3">
+                        {course.title}
+                      </h3>
 
-                    {/* Optional: Join WhatsApp Group direct link */}
-                    {course.type === 'LIVE' && course.whatsappGroupLink && (
-                      <a
-                        href={course.whatsappGroupLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            Progress
+                          </span>
+                          <span className="text-sm font-bold text-[#1c4645]">
+                            {progress}% completed
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {/* ✅ Corrected Continue Button */}
+                      <Link
+                        href={courseUrl}
+                        className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium mb-2"
                       >
-                        Join WhatsApp Group
-                      </a>
-                    )}
+                        <Play className="h-4 w-4" />
+                        {completed
+                          ? 'Review Course'
+                          : isLive
+                          ? 'View Live Details'
+                          : 'Continue Learning'}
+                      </Link>
+
+                      {/* Optional: Join WhatsApp Group direct link */}
+                      {isLive && course.whatsappGroupLink && (
+                        <a
+                          href={course.whatsappGroupLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        >
+                          Join WhatsApp Group
+                        </a>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
