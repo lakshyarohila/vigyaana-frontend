@@ -11,7 +11,6 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  MessageSquare,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -20,7 +19,6 @@ export default function DashboardPage() {
   const {
     data: courses = [],
     isLoading,
-    isError,
   } = useQuery({
     queryKey: ['/enrollments/my'],
     queryFn: fetcher,
@@ -176,16 +174,24 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Continue Button */}
+                    {/* ✅ Corrected Continue Button */}
                     <Link
-                      href={`/dashboard/course/${course.id}`}
+                      href={
+                        course.type === 'LIVE'
+                          ? `/dashboard/live-course/${course.id}`
+                          : `/dashboard/course/${course.id}`
+                      }
                       className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium mb-2"
                     >
                       <Play className="h-4 w-4" />
-                      {completed ? 'Review Course' : 'Continue Learning'}
+                      {completed
+                        ? 'Review Course'
+                        : course.type === 'LIVE'
+                        ? 'View Live Details'
+                        : 'Continue Learning'}
                     </Link>
 
-                    {/* ✅ Join WhatsApp Group button for LIVE courses */}
+                    {/* Optional: Join WhatsApp Group direct link */}
                     {course.type === 'LIVE' && course.whatsappGroupLink && (
                       <a
                         href={course.whatsappGroupLink}
