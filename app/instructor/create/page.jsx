@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const toast = {
   success: (message) => console.log('Success:', message),
-  error: (message) => console.log('Error:', message)
+  error: (message) => console.log('Error:', message),
 };
 
 export default function CreateCoursePage() {
@@ -40,9 +40,9 @@ export default function CreateCoursePage() {
     data.append('description', form.description);
     data.append('price', form.price);
     data.append('thumbnail', form.thumbnail);
-    data.append('type', form.type); // ✅ added type
+    data.append('type', form.type);
     if (form.type === 'LIVE' && form.whatsappGroupLink) {
-      data.append('whatsappGroupLink', form.whatsappGroupLink); // ✅ add only for LIVE
+      data.append('whatsappGroupLink', form.whatsappGroupLink);
     }
 
     try {
@@ -53,14 +53,21 @@ export default function CreateCoursePage() {
       });
 
       if (response.ok) {
-        const newCourse = await response.json();
+        const resData = await response.json();
         toast.success('Course created');
-        router.push(`/instructor/${newCourse.id}/add-section`);
+
+        // ✅ Redirect based on type
+        const newCourseId = resData.course?.id || resData.id;
+        if (form.type === 'LIVE') {
+          router.push(`/instructor/live-course/${newCourseId}`);
+        } else {
+          router.push(`/instructor/${newCourseId}/add-section`);
+        }
       } else {
         throw new Error('Failed to create course');
       }
     } catch (err) {
-      toast.error('Failed to create course');
+      toast.error(err.message || 'Failed to create course');
     }
   };
 
@@ -76,7 +83,9 @@ export default function CreateCoursePage() {
             <div className="space-y-6">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#1c4645]">Course Title</label>
+                <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                  Course Title
+                </label>
                 <input
                   name="title"
                   value={form.title}
@@ -89,7 +98,9 @@ export default function CreateCoursePage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#1c4645]">Description</label>
+                <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                  Description
+                </label>
                 <textarea
                   name="description"
                   value={form.description}
@@ -102,7 +113,9 @@ export default function CreateCoursePage() {
 
               {/* Price */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#1c4645]">Price ($)</label>
+                <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                  Price ($)
+                </label>
                 <input
                   name="price"
                   type="number"
@@ -118,7 +131,9 @@ export default function CreateCoursePage() {
 
               {/* Course Type */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#1c4645]">Course Type</label>
+                <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                  Course Type
+                </label>
                 <select
                   name="type"
                   value={form.type}
@@ -131,10 +146,12 @@ export default function CreateCoursePage() {
                 </select>
               </div>
 
-              {/* ✅ WhatsApp Group Link for LIVE */}
+              {/* WhatsApp Group Link for LIVE */}
               {form.type === 'LIVE' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-[#1c4645]">WhatsApp Group Link</label>
+                  <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                    WhatsApp Group Link
+                  </label>
                   <input
                     name="whatsappGroupLink"
                     type="url"
@@ -149,7 +166,9 @@ export default function CreateCoursePage() {
 
               {/* Thumbnail */}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[#1c4645]">Course Thumbnail</label>
+                <label className="block text-sm font-medium mb-2 text-[#1c4645]">
+                  Course Thumbnail
+                </label>
                 <input
                   name="thumbnail"
                   type="file"
