@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/queryFetch';
 import useAuthStore from '@/lib/store';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
 import {
@@ -38,7 +37,8 @@ export default function DashboardPage() {
 
   const handleCourseClick = (course) => {
     if (course.type === 'LIVE') {
-      router.push(`/dashboard/live-course/${course.id}`);
+      // ✅ redirect to instructor live course page for WhatsApp link
+      router.push(`/instructor/live-course/${course.id}`);
     } else {
       router.push(`/dashboard/course/${course.id}`);
     }
