@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
+  Video,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -61,12 +62,23 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#1c4645] to-[#2a5a58] text-white py-8 px-6">
-          <div className="max-w-7xl mx-auto">
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-              <BookOpen className="h-8 w-8" />
-              My Learning Dashboard
-            </h1>
-            <p className="text-blue-100">Continue your learning journey</p>
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                <BookOpen className="h-8 w-8" />
+                My Learning Dashboard
+              </h1>
+              <p className="text-blue-100">Continue your learning journey</p>
+            </div>
+
+            {/* ✅ Live Courses button */}
+            <Link
+              href="/dashboard/live-courses"
+              className="bg-green-600 hover:bg-green-700 transition-colors px-6 py-3 rounded-lg flex items-center gap-2 font-medium"
+            >
+              <Video className="h-5 w-5" />
+              View Live Courses
+            </Link>
           </div>
         </div>
 
@@ -127,14 +139,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map(({ course, progress, completed }) => {
-                const courseType = course.type;
-                const isLive = courseType === 'LIVE';
-                const courseUrl = isLive
-                  ? `/dashboard/live-course/${course.id}`
-                  : `/dashboard/course/${course.id}`;
-
-                return (
+              {courses
+                .filter(({ course }) => course.type !== 'LIVE') // ✅ Only recorded courses here
+                .map(({ course, progress, completed }) => (
                   <div
                     key={course.id}
                     className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
@@ -181,34 +188,17 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* ✅ Corrected Continue Button */}
+                      {/* Continue Button */}
                       <Link
-                        href={courseUrl}
-                        className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium mb-2"
+                        href={`/dashboard/course/${course.id}`}
+                        className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium"
                       >
                         <Play className="h-4 w-4" />
-                        {completed
-                          ? 'Review Course'
-                          : isLive
-                          ? 'View Live Details'
-                          : 'Continue Learning'}
+                        {completed ? 'Review Course' : 'Continue Learning'}
                       </Link>
-
-                      {/* Optional: Join WhatsApp Group direct link */}
-                      {isLive && course.whatsappGroupLink && (
-                        <a
-                          href={course.whatsappGroupLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
-                        >
-                          Join WhatsApp Group
-                        </a>
-                      )}
                     </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
           )}
         </div>
