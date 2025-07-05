@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/queryFetch';
 import useAuthStore from '@/lib/store';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/compoenets/ProtectedRoute';
 import {
   BookOpen,
@@ -11,11 +12,11 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  Video,
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
 
   const {
     data: courses = [],
@@ -34,6 +35,14 @@ export default function DashboardPage() {
           courses.reduce((sum, course) => sum + course.progress, 0) / courses.length
         )
       : 0;
+
+  const handleCourseClick = (course) => {
+    if (course.type === 'LIVE') {
+      router.push(`/dashboard/live-course/${course.id}`);
+    } else {
+      router.push(`/dashboard/course/${course.id}`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -62,23 +71,12 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#1c4645] to-[#2a5a58] text-white py-8 px-6">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                <BookOpen className="h-8 w-8" />
-                My Learning Dashboard
-              </h1>
-              <p className="text-blue-100">Continue your learning journey</p>
-            </div>
-
-            {/* ✅ Live Courses button */}
-            <Link
-              href="/dashboard/live-courses"
-              className="bg-green-600 hover:bg-green-700 transition-colors px-6 py-3 rounded-lg flex items-center gap-2 font-medium"
-            >
-              <Video className="h-5 w-5" />
-              View Live Courses
-            </Link>
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+              <BookOpen className="h-8 w-8" />
+              My Learning Dashboard
+            </h1>
+            <p className="text-blue-100">Continue your learning journey</p>
           </div>
         </div>
 
@@ -139,66 +137,64 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses
-                .filter(({ course }) => course.type !== 'LIVE') // ✅ Only recorded courses here
-                .map(({ course, progress, completed }) => (
-                  <div
-                    key={course.id}
-                    className="bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="relative">
-                      <img
-                        src={course.thumbnailUrl}
-                        alt={course.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      {completed && (
-                        <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
-                          <CheckCircle className="h-5 w-5" />
-                        </div>
-                      )}
-                      {progress > 0 && !completed && (
-                        <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
-                          {progress}%
-                        </div>
-                      )}
+              {courses.map(({ course, progress, completed }) => (
+                <div
+                  key={course.id}
+                  onClick={() => handleCourseClick(course)}
+                  className="cursor-pointer bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
+                >
+                  <div className="relative">
+                    <img
+                      src={course.thumbnailUrl}
+                      alt={course.title}
+                      className="w-full h-48 object-cover"
+                    />
+                    {completed && (
+                      <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
+                        <CheckCircle className="h-5 w-5" />
+                      </div>
+                    )}
+                    {progress > 0 && !completed && (
+                      <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {progress}%
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-[#1c4645] mb-3">
+                      {course.title}
+                    </h3>
+
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          Progress
+                        </span>
+                        <span className="text-sm font-bold text-[#1c4645]">
+                          {progress}% completed
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
                     </div>
 
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-[#1c4645] mb-3">
-                        {course.title}
-                      </h3>
-
-                      {/* Progress Bar */}
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            Progress
-                          </span>
-                          <span className="text-sm font-bold text-[#1c4645]">
-                            {progress}% completed
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-
-                      {/* Continue Button */}
-                      <Link
-                        href={`/dashboard/course/${course.id}`}
-                        className="bg-[#1c4645] text-white px-4 py-2 rounded-lg hover:bg-[#2a5a58] transition-colors flex items-center justify-center gap-2 w-full font-medium"
-                      >
-                        <Play className="h-4 w-4" />
-                        {completed ? 'Review Course' : 'Continue Learning'}
-                      </Link>
+                    <div className="bg-[#1c4645] text-white px-4 py-2 rounded-lg text-center font-medium">
+                      {completed
+                        ? 'Review Course'
+                        : course.type === 'LIVE'
+                        ? 'View Live Details'
+                        : 'Continue Learning'}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           )}
         </div>
