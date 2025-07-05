@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const {
-    data: courses = [],
+    data: enrollments = [],
     isLoading,
   } = useQuery({
     queryKey: ['/enrollments/my'],
@@ -26,18 +26,23 @@ export default function DashboardPage() {
     enabled: !!user,
   });
 
-  const totalCourses = courses.length;
-  const completedCourses = courses.filter((c) => c.completed).length;
+  // 🐞 Debug data structure
+  console.log('Enrolled courses data:', enrollments);
+
+  const totalCourses = enrollments.length;
+  const completedCourses = enrollments.filter((e) => e.completed).length;
   const averageProgress =
-    courses.length > 0
+    enrollments.length > 0
       ? Math.round(
-          courses.reduce((sum, course) => sum + course.progress, 0) / courses.length
+          enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length
         )
       : 0;
 
-  const handleCourseClick = (course) => {
-    if (course.type === 'LIVE') {
-      // ✅ redirect to instructor live course page for WhatsApp link
+  const handleCourseClick = (enrollment) => {
+    const course = enrollment.course;
+    const courseType = course?.type || 'RECORDED';
+
+    if (courseType === 'LIVE') {
       router.push(`/instructor/live-course/${course.id}`);
     } else {
       router.push(`/dashboard/course/${course.id}`);
@@ -82,7 +87,7 @@ export default function DashboardPage() {
 
         <div className="max-w-7xl mx-auto p-6">
           {/* Stats Cards */}
-          {courses.length > 0 && (
+          {enrollments.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-white border-2 border-[#1c4645] rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between">
@@ -124,7 +129,7 @@ export default function DashboardPage() {
             </h2>
           </div>
 
-          {courses.length === 0 ? (
+          {enrollments.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg mb-4">
@@ -137,64 +142,69 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map(({ course, progress, completed }) => (
-                <div
-                  key={course.id}
-                  onClick={() => handleCourseClick(course)}
-                  className="cursor-pointer bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
-                >
-                  <div className="relative">
-                    <img
-                      src={course.thumbnailUrl}
-                      alt={course.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    {completed && (
-                      <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
-                        <CheckCircle className="h-5 w-5" />
-                      </div>
-                    )}
-                    {progress > 0 && !completed && (
-                      <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {progress}%
-                      </div>
-                    )}
-                  </div>
+              {enrollments.map((enrollment) => {
+                const { course, progress, completed } = enrollment;
+                const courseType = course?.type || 'RECORDED';
 
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-[#1c4645] mb-3">
-                      {course.title}
-                    </h3>
-
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          Progress
-                        </span>
-                        <span className="text-sm font-bold text-[#1c4645]">
-                          {progress}% completed
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
+                return (
+                  <div
+                    key={course.id}
+                    onClick={() => handleCourseClick(enrollment)}
+                    className="cursor-pointer bg-white border-2 border-gray-100 rounded-lg shadow-sm hover:shadow-md hover:border-[#1c4645] transition-all duration-200 overflow-hidden"
+                  >
+                    <div className="relative">
+                      <img
+                        src={course.thumbnailUrl}
+                        alt={course.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      {completed && (
+                        <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full">
+                          <CheckCircle className="h-5 w-5" />
+                        </div>
+                      )}
+                      {progress > 0 && !completed && (
+                        <div className="absolute top-3 right-3 bg-[#1c4645] text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {progress}%
+                        </div>
+                      )}
                     </div>
 
-                    <div className="bg-[#1c4645] text-white px-4 py-2 rounded-lg text-center font-medium">
-                      {completed
-                        ? 'Review Course'
-                        : course.type === 'LIVE'
-                        ? 'View Live Details'
-                        : 'Continue Learning'}
+                    <div className="p-6">
+                      <h3 className="text-xl font-bold text-[#1c4645] mb-3">
+                        {course.title}
+                      </h3>
+
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            Progress
+                          </span>
+                          <span className="text-sm font-bold text-[#1c4645]">
+                            {progress}% completed
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-[#1c4645] h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#1c4645] text-white px-4 py-2 rounded-lg text-center font-medium">
+                        {completed
+                          ? 'Review Course'
+                          : courseType === 'LIVE'
+                          ? 'View Live Details'
+                          : 'Continue Learning'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
